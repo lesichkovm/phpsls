@@ -1,0 +1,21 @@
+{
+    "name": "sinevia/phpsls",
+    "authors": [
+        {
+            "name": "Sinevia",
+            "email": "info@sinevia.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "PHPServerless\\": "src/"
+        }
+    },
+    "bin": [
+        "phpsls"
+    ],
+    "require": {
+        "consolidation/robo": "^2.0",
+        "sinevia/php-library-registry": "^2.9"
+    }
+}

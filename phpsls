@@ -1,0 +1,74 @@
+#!/usr/bin/env php
+<?php declare(strict_types=1);
+/*
+ * This file is part of PHP Serverless.
+ *
+ * (c) Sinevia <info@sinevia.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+if (version_compare('7.3.0', PHP_VERSION, '>')) {
+    fwrite(
+        STDERR,
+        sprintf(
+            'This version of PHP Serverless is supported on PHP 7.3, PHP 7.4, and PHP 8.0.' . PHP_EOL .
+            'You are using PHP %s (%s).' . PHP_EOL,
+            PHP_VERSION,
+            PHP_BINARY
+        )
+    );
+    die(1);
+}
+
+if (!ini_get('date.timezone')) {
+    ini_set('date.timezone', 'UTC');
+}
+
+foreach (array(__DIR__ . '/../../autoload.php', __DIR__ . '/../vendor/autoload.php', __DIR__ . '/vendor/autoload.php') as $file) {
+    if (file_exists($file)) {
+        define('PHPSERVERLESS_COMPOSER_INSTALL', $file);
+        break;
+    }
+}
+
+unset($file);
+
+if (!defined('PHPSERVERLESS_COMPOSER_INSTALL')) {
+    fwrite(
+        STDERR,
+        'You need to set up the project dependencies using Composer:' . PHP_EOL . PHP_EOL .
+        '    composer install' . PHP_EOL . PHP_EOL .
+        'You can learn all about Composer on https://getcomposer.org/.' . PHP_EOL
+    );
+    die(1);
+}
+
+$options = getopt('', array('prepend:'));
+if (isset($options['prepend'])) {
+    require $options['prepend'];
+}
+
+unset($options);
+
+$classLoader = require PHPSERVERLESS_COMPOSER_INSTALL;
+//PHPServerless\Command::main();
+
+// Customization variables
+$appName = "PHPServerless";
+$appVersion = '1';
+$commandClasses = [ \PHPServerless\RoboFile::class ];
+$selfUpdateRepository = 'myorg/myproject';
+$configurationFilename = 'myconfig.yml';
+
+// Define our Runner, and pass it the command classes we provide.
+$runner = new \Robo\Runner($commandClasses);
+$runner
+  ->setSelfUpdateRepository($selfUpdateRepository)
+  ->setConfigurationFilename($configurationFilename)
+  ->setClassLoader($classLoader);
+
+// Execute the command and return the result.
+$output = new \Symfony\Component\Console\Output\ConsoleOutput();
+$statusCode = $runner->execute($argv, $appName, $appVersion, $output);
+exit($statusCode);
