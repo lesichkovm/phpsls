@@ -45,8 +45,6 @@ class RoboFile extends \Robo\Tasks {
         \Sinevia\Registry::set("ENVIRONMENT", $environment);
         $this->loadEnvConf(\Sinevia\Registry::get("ENVIRONMENT"));
 
-        var_dump(\Sinevia\Registry::toArray());
-
         // 3. Check if serverless function name is set
         $functionName = \Sinevia\Registry::get('SERVERLESS_FUNCTION_NAME', '');
 
@@ -58,7 +56,8 @@ class RoboFile extends \Robo\Tasks {
             return $this->say('SERVERLESS_FUNCTION_NAME not set for environment "' . $environment . '"');
         }
 
-        $this->say('5. Creating deployment directory...');
+        // 4. Create deployment directory
+        $this->say('4. Creating deployment directory...');
         if (file_exists($this->dirPhpSlsDeploy) == false) {
             $isSuccessful = $this->taskExec('mkdir')
                     ->arg($this->dirPhpSlsDeploy)
@@ -70,12 +69,18 @@ class RoboFile extends \Robo\Tasks {
         }
 
         $this->taskCleanDir([$this->dirPhpSlsDeploy])->run();
+        
+        // 5. Add required stub files
+        $this->say('5. Copying stub files...');
+        $serverlessFileContents = file_get_contents(__DIR__ . '/stubs/serverless.php');
+        file_put_contents($this->dirPhpSlsDeploy . '/serverless.php', $serverlessFileContents);
 
         $serverlessFileContents = file_get_contents(__DIR__ . '/stubs/serverless.yaml');
         $serverlessFileContents = str_replace('{YOURFUNCTION}', $functionName, $serverlessFileContents);
         file_put_contents($this->dirPhpSlsDeploy . '/serverless.yaml', $serverlessFileContents);
 
-        $this->say('5. Copying files...');
+        // 6. Copy project files
+        $this->say('6. Copying files...');
         $this->taskCopyDir([getcwd() => $this->dirPhpSlsDeploy])
                 ->exclude([
                     $this->dirPhpSls,
@@ -106,34 +111,43 @@ class RoboFile extends \Robo\Tasks {
             return $this->say('Failed.');
         }
 
-        exit('HERE');
         // 6. Prepare for deployment
-//        $this->say('4. Prepare for deployment...');
-//        $this->taskReplaceInFile('env.php')
-//                ->from('"ENVIRONMENT", isLocal() ? "local" : "unrecognized"')
-//                ->to('"ENVIRONMENT", isLoca()()l() ? "local" : "' . $environment . '"')
-//                ->run();
+        $this->say('4. Prepare for deployment...');
+        $this->taskReplaceInFile($this->dirPhpSlsDeploy . '/env.php')
+                ->from('"ENVIRONMENT", isLocal() ? "local" : "unrecognized"')
+                ->to('"ENVIRONMENT", "' . $environment . '"')
+                ->run();
+        
+        $packageFileContents = file_get_contents(__DIR__ . '/stubs/package.json');
+        file_put_contents($this->dirPhpSlsDeploy . '/package.json', $packageFileContents);
+
+        try {
+            $this->say('5. NPM Install Packages...');
+            $this->taskExec('npm')
+                    ->arg('install')
+                    // ->option('function', $functionName) // Not working since Serverless v.1.5.1
+                    ->dir($this->dirPhpSlsDeploy)
+                    ->run();
+        } catch (\Exception $e) {
+            $this->say('There was an exception: ' . $e->getMessage());
+        }
+
         // 7. Deploy
         try {
             $this->say('5. Deploying...');
             $this->taskExec('sls')
                     ->arg('deploy')
                     // ->option('function', $functionName) // Not working since Serverless v.1.5.1
+                    ->dir($this->dirPhpSlsDeploy)
                     ->run();
         } catch (\Exception $e) {
             $this->say('There was an exception: ' . $e->getMessage());
+            return;
         }
 
         // 8. Cleanup after deployment
         $this->say('6. Cleaning up...');
-        $this->taskReplaceInFile('env.php')
-                ->from('"ENVIRONMENT", isLocal() ? "local" : "' . $environment . '"')
-                ->to('"ENVIRONMENT", isLocal() ? "local" : "unrecognized"')
-                ->run();
-        $this->taskReplaceInFile('serverless.yaml')
-                ->from($functionName)
-                ->to('{YOURFUNCTION}')
-                ->run();
+        
     }
 
     /**
