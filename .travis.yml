@@ -16,8 +16,8 @@ before_script:
   - travis_retry composer self-update
   - travis_retry composer update ${COMPOSER_FLAGS} --no-interaction
 
-install:
-  - composer update  ${COMPOSER_FLAGS} --no-interaction
+#install:
+#  - composer update  ${COMPOSER_FLAGS} --no-interaction
 
 script:
   # - vendor/bin/phpunit --coverage-text --coverage-clover=coverage.clover
