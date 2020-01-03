@@ -4,4 +4,4 @@
 [![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/lesichkovm/phpsls) 
 
 ## Installation
-composer require lesichkov/phpsls
+composer require lesichkovm/phpsls
