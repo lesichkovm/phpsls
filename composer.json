@@ -1,9 +1,9 @@
 {
-    "name": "sinevia/phpsls",
+    "name": "lesichkov/phpsls",
     "authors": [
         {
-            "name": "Sinevia",
-            "email": "info@sinevia.com"
+            "name": "Milan Lesichkov",
+            "email": "lesichkovm@gmail.com"
         }
     ],
     "autoload": {
