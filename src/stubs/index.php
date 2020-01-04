@@ -1,6 +1,6 @@
 <?php
 
-require_once dirname(__DIR__) . '/serverless.php';
+require_once dirname(__DIR__) . '/main.php';
 
 $response = main();
 if (isset($response['body']) == true) {
