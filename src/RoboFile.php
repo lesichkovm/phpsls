@@ -23,12 +23,12 @@ class RoboFile extends \Robo\Tasks {
         if (is_dir($this->dirPhpSls) == true) {
             return true;
         }
-        $isSuccessful = $this->taskExec('mkdir')
-                ->arg($this->dirPhpSls)
-                ->run()
-                ->wasSuccessful();
-        if ($isSuccessful == false) {
-            return $this->say('Failed.');
+        
+
+        \mkdir($this->dirPhpSls);
+
+        if (is_dir($this->dirPhpSls) == true) {
+            return $this->say('Failed ro create directory .phpsls in current directory. Please create manually.');
         }
     }
 
