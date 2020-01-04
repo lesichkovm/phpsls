@@ -123,8 +123,7 @@ class RoboFile extends \Robo\Tasks {
 
         try {
             $this->say('5. NPM Install Packages...');
-            $this->taskExec('npm')
-                    ->arg('install')
+            $this->taskExec('npm')->arg('install')
                     // ->option('function', $functionName) // Not working since Serverless v.1.5.1
                     ->dir($this->dirPhpSlsDeploy)
                     ->run();
@@ -147,6 +146,11 @@ class RoboFile extends \Robo\Tasks {
 
         // 8. Cleanup after deployment
         $this->say('6. Cleaning up...');
+        
+        // 8. Cleanup after deployment
+        $this->say('7. Opening URL...');
+        $urlBase = \Sinevia\Registry::get('URL_BASE', '');
+        $this->taskOpenBrowser($urlBase)->run();
         
     }
 

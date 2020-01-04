@@ -1,9 +1,8 @@
 <?php
 
 require_once __DIR__ . '/vendor/autoload.php';
-require_once __DIR__ . '/index.php';
 
-function serverless($args = [])
+function run($args = [])
 {
     date_default_timezone_set('Europe/London');
 

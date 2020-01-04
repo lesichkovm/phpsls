@@ -27,7 +27,7 @@ provider:
 
 functions:
   {YOURFUNCTION}: # !!! Do not change will be modified automatically during deployment
-    handler: serverless.main
+    handler: serverless.run
     name: {YOURFUNCTION} # !!! Do not change will be modified automatically during deployment
     annotations:
       web-export: true
