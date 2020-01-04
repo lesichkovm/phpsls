@@ -1,9 +1,9 @@
 {
-    "name": "sinevia/phpsls",
+    "name": "lesichkovm/phpsls",
     "authors": [
         {
-            "name": "Sinevia",
-            "email": "info@sinevia.com"
+            "name": "Milan Lesichkov",
+            "email": "lesichkovm@gmail.com"
         }
     ],
     "autoload": {
@@ -17,5 +17,8 @@
     "require": {
         "consolidation/robo": "^2.0",
         "sinevia/php-library-registry": "^2.9"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^8.5"
     }
 }
