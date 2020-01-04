@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c5c7674c264f340fac60d8a557744789",
+    "content-hash": "13b094f0a9ccfcc9a5e6a810a9c3aa4d",
     "packages": [
         {
             "name": "consolidation/annotated-command",
@@ -802,6 +802,48 @@
                 "sinevia"
             ],
             "time": "2019-06-17T20:00:06+00:00"
+        },
+        {
+            "name": "sinevia/php-library-serverless",
+            "version": "v1.7.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Sinevia/php-library-serverless.git",
+                "reference": "40f0e1fde8bdc3e209f741472ffd92718eeeced0"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Sinevia/php-library-serverless/zipball/40f0e1fde8bdc3e209f741472ffd92718eeeced0",
+                "reference": "40f0e1fde8bdc3e209f741472ffd92718eeeced0",
+                "shasum": ""
+            },
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "src/Serverless.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "proprietary"
+            ],
+            "authors": [
+                {
+                    "name": "Milan Lesichkov",
+                    "email": "lesichkovm@gmail.com",
+                    "homepage": "http://lesichkov.co.uk",
+                    "role": "Lead Developer"
+                }
+            ],
+            "description": "PHP Library Serverless",
+            "homepage": "http://github.com/sinevia/php-library-serverless",
+            "keywords": [
+                "library",
+                "php",
+                "serverless",
+                "sinevia"
+            ],
+            "time": "2019-10-18T22:51:45+00:00"
         },
         {
             "name": "symfony/console",

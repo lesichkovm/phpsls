@@ -36,9 +36,14 @@ class RoboFile extends \Robo\Tasks {
         // 1. Does the configuration file exists? No => Exit
         $this->say('1. Checking configuration...');
         $envConfigFile = $this->dirConfig . '/' . $environment . '.php';
+        $mainFile = $this->dirCwd . '/main.php';
 
         if (file_exists($envConfigFile) == false) {
             return $this->say('Configuration file for environment "' . $environment . '" missing at: ' . $envConfigFile);
+        }
+
+        if (file_exists($mainFile) == false) {
+            return $this->say('Main file with function "main()" missing at: main.php');
         }
 
         // 2. Load the configuration file for the enviroment
