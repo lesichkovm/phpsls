@@ -1,5 +1,6 @@
 #!/usr/bin/env php
-<?php 
+
+<?php declare(strict_types=1);
 
 /*
  * This file is part of PHP Serverless.
@@ -9,8 +10,6 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
-declare(strict_types=1);
 
 if (version_compare('7.0.0', PHP_VERSION, '>')) {
     fwrite(STDERR,"This version of PHP Serverless is supported on PHP 7.0, 7.1, 7.2, 7.3, PHP 7.4, and PHP 8.0." . PHP_EOL);
