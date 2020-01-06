@@ -1,3 +1,6 @@
+/.phpsls
+/config
 /vendor
-composer.lock
-.phpunit.result.cache
+/.phpunit.result.cache
+/composer.lock
+/main.php

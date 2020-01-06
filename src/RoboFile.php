@@ -8,22 +8,24 @@ class RoboFile extends \Robo\Tasks {
     private $dirPhpSls = null;
     private $dirConfig = null;
     private $dirPhpSlsDeploy = null;
+    private $fileEnv = null;
+    private $fileMain = null;
 
     function __construct() {
-        $this->init();
+        $this->prepare();
     }
 
-    function init() {
+    private function prepare() {
         $this->dirCwd = getcwd();
         $this->dirConfig = $this->dirCwd . '/config';
         $this->dirPhpSls = $this->dirCwd . '/.phpsls';
         $this->dirPhpSlsDeploy = $this->dirPhpSls . '/deploy';
+        $this->fileMain = $this->dirCwd . '/main.php';
 
 
         if (is_dir($this->dirPhpSls) == true) {
             return true;
         }
-        
 
         \mkdir($this->dirPhpSls);
 
@@ -32,18 +34,65 @@ class RoboFile extends \Robo\Tasks {
         }
     }
 
+    public function init() {
+        $environment = trim($this->ask('What environment do you want to initialize: local, staging, live?'));
+
+        if ($environment == "") {
+            $this->say("Environment cannot be empty. FAILED");
+            return false;
+        }
+
+        $functionName = trim($this->ask('What would you like your function to be called?'));
+
+        if ($functionName == "") {
+            $this->say("Function name cannot be empty. FAILED");
+            return false;
+        }
+
+        $this->say('1. Creating config file for "'.$environment.'" environment...');
+        
+        $this->fileEnv = $this->dirConfig . '/' . $environment . '.php';
+
+        
+        if (\is_dir($this->dirConfig) == false) {
+            \mkdir($this->dirConfig);
+        }
+
+        if(\file_exists($this->fileEnv)==false){
+            $configFileContents = file_get_contents(__DIR__ . '/stubs/config.php');
+            $configFileContents = \str_replace("{YOURFUNCTION}", $functionName, $configFileContents);
+            file_put_contents($this->fileEnv, $configFileContents);
+            $this->say("Configuration file for environment '".$environment."' created. SUCCESS");
+            $this->say("Please check all is correct at: '" . $this->fileEnv . "'");
+        } else {
+            $this->say("Configuration file for environment '".$environment."' already exists at ".$this->fileEnv.". SKIPPED");
+        }
+
+        $this->say('2. Creating main file...');
+
+        if(\file_exists($this->fileMain)==false){
+            $mainFileContents = file_get_contents(__DIR__ . '/stubs/main.php');
+            file_put_contents($this->fileMain, $mainFileContents);
+            $this->say("Main file created. SUCCESS");
+            $this->say("Please check all is correct at: '" . $this->fileMain . "'");
+        } else {
+            $this->say("Main file already exists at ".$this->fileMain.". SKIPPED");
+        }
+
+    }
+
     public function deploy($environment) {
         // 1. Does the configuration file exists? No => Exit
         $this->say('1. Checking configuration...');
-        $envConfigFile = $this->dirConfig . '/' . $environment . '.php';
-        $mainFile = $this->dirCwd . '/main.php';
 
-        if (file_exists($envConfigFile) == false) {
-            return $this->say('Configuration file for environment "' . $environment . '" missing at: ' . $envConfigFile);
+        $this->fileEnv = $this->dirConfig . '/' . $environment . '.php';
+
+        if (file_exists($this->fileEnv) == false) {
+            return $this->say('Configuration file for environment "' . $environment . '" missing at: ' . $this->fileEnv);
         }
 
-        if (file_exists($mainFile) == false) {
-            return $this->say('Main file with function "main()" missing at: main.php');
+        if (file_exists($this->fileMain) == false) {
+            return $this->say('Main file with function "main()" missing at: ' . $this->fileMain);
         }
 
         // 2. Load the configuration file for the enviroment
