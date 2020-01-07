@@ -213,8 +213,6 @@ class RoboFile extends \Robo\Tasks {
      * @return void
      */
     public function serve() {
-        $this->init();
-
         /* START: Reload enviroment */
 //        \Sinevia\Registry::set("ENVIRONMENT", 'local');
 //        loadEnvConf(\Sinevia\Registry::get("ENVIRONMENT"));
