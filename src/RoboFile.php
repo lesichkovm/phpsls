@@ -9,6 +9,7 @@ class RoboFile extends \Robo\Tasks {
     private $dirConfig = null;
     private $dirPhpSlsDeploy = null;
     private $fileEnv = null;
+    private $fileEnvConfig = null;
     private $fileMain = null;
 
     function __construct() {
@@ -20,6 +21,7 @@ class RoboFile extends \Robo\Tasks {
         $this->dirConfig = $this->dirCwd . '/config';
         $this->dirPhpSls = $this->dirCwd . '/.phpsls';
         $this->dirPhpSlsDeploy = $this->dirPhpSls . '/deploy';
+        $this->fileEnv = $this->dirCwd . '/env.php';
         $this->fileMain = $this->dirCwd . '/main.php';
 
 
@@ -42,30 +44,36 @@ class RoboFile extends \Robo\Tasks {
             return false;
         }
 
-        $functionName = trim($this->ask('What would you like your function to be called?'));
+        if ($environment != "local"){
+            $functionName = trim($this->ask('What would you like your function to be called?'));
 
-        if ($functionName == "") {
-            $this->say("Function name cannot be empty. FAILED");
-            return false;
+            if ($functionName == "") {
+                $this->say("Function name cannot be empty. FAILED");
+                return false;
+            }
         }
+
 
         $this->say('1. Creating config file for "'.$environment.'" environment...');
         
-        $this->fileEnv = $this->dirConfig . '/' . $environment . '.php';
+        $this->fileEnvConfig = $this->dirConfig . '/' . $environment . '.php';
 
         
         if (\is_dir($this->dirConfig) == false) {
             \mkdir($this->dirConfig);
         }
 
-        if(\file_exists($this->fileEnv)==false){
-            $configFileContents = file_get_contents(__DIR__ . '/stubs/config.php');
-            $configFileContents = \str_replace("{YOURFUNCTION}", $functionName, $configFileContents);
-            file_put_contents($this->fileEnv, $configFileContents);
+        if(\file_exists($this->fileEnvConfig)==false){
+            $stub = $environment=="local" ? "config-local.php" : "config.php";
+            $configFileContents = file_get_contents(__DIR__ . '/stubs/' . $stub);
+            if($environment!="local"){
+                $configFileContents = \str_replace("{YOURFUNCTION}", $functionName, $configFileContents);
+            }
+            file_put_contents($this->fileEnvConfig, $configFileContents);
             $this->say("Configuration file for environment '".$environment."' created. SUCCESS");
-            $this->say("Please check all is correct at: '" . $this->fileEnv . "'");
+            $this->say("Please check all is correct at: '" . $this->fileEnvConfig . "'");
         } else {
-            $this->say("Configuration file for environment '".$environment."' already exists at ".$this->fileEnv.". SKIPPED");
+            $this->say("Configuration file for environment '".$environment."' already exists at ".$this->fileEnvConfig.". SKIPPED");
         }
 
         $this->say('2. Creating main file...');
@@ -77,6 +85,17 @@ class RoboFile extends \Robo\Tasks {
             $this->say("Please check all is correct at: '" . $this->fileMain . "'");
         } else {
             $this->say("Main file already exists at ".$this->fileMain.". SKIPPED");
+        }
+
+        $this->say('3. Creating env file...');
+
+        if(\file_exists($this->fileEnv)==false){
+            $envFileContents = file_get_contents(__DIR__ . '/stubs/env.php');
+            file_put_contents($this->fileEnv, $envFileContents);
+            $this->say("Env file created. SUCCESS");
+            $this->say("Please check all is correct at: '" . $this->fileEnv . "'");
+        } else {
+            $this->say("Env file already exists at ".$this->fileEnv.". SKIPPED");
         }
 
     }
