@@ -18,11 +18,11 @@ class RoboFile extends \Robo\Tasks {
 
     private function prepare() {
         $this->dirCwd = getcwd();
-        $this->dirConfig = $this->dirCwd . '/config';
-        $this->dirPhpSls = $this->dirCwd . '/.phpsls';
-        $this->dirPhpSlsDeploy = $this->dirPhpSls . '/deploy';
-        $this->fileEnv = $this->dirCwd . '/env.php';
-        $this->fileMain = $this->dirCwd . '/main.php';
+        $this->dirConfig = $this->dirCwd . DIRECTORY_SEPARATOR . 'config';
+        $this->dirPhpSls = $this->dirCwd . DIRECTORY_SEPARATOR . '.phpsls';
+        $this->dirPhpSlsDeploy = $this->dirPhpSls . DIRECTORY_SEPARATOR . 'deploy';
+        $this->fileEnv = $this->dirCwd . DIRECTORY_SEPARATOR . 'env.php';
+        $this->fileMain = $this->dirCwd . DIRECTORY_SEPARATOR . 'main.php';
 
 
         if (is_dir($this->dirPhpSls) == true) {
@@ -56,7 +56,7 @@ class RoboFile extends \Robo\Tasks {
 
         $this->say('1. Creating config file for "'.$environment.'" environment...');
         
-        $this->fileEnvConfig = $this->dirConfig . '/' . $environment . '.php';
+        $this->fileEnvConfig = $this->dirConfig . DIRECTORY_SEPARATOR . $environment . '.php';
 
         
         if (\is_dir($this->dirConfig) == false) {
@@ -65,7 +65,7 @@ class RoboFile extends \Robo\Tasks {
 
         if(\file_exists($this->fileEnvConfig)==false){
             $stub = $environment=="local" ? "config-local.php" : "config.php";
-            $configFileContents = file_get_contents(__DIR__ . '/stubs/' . $stub);
+            $configFileContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR .  'stubs' . DIRECTORY_SEPARATOR . $stub);
             if($environment!="local"){
                 $configFileContents = \str_replace("{YOURFUNCTION}", $functionName, $configFileContents);
             }
@@ -79,7 +79,7 @@ class RoboFile extends \Robo\Tasks {
         $this->say('2. Creating main file...');
 
         if(\file_exists($this->fileMain)==false){
-            $mainFileContents = file_get_contents(__DIR__ . '/stubs/main.php');
+            $mainFileContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR .  'stubs' . DIRECTORY_SEPARATOR . 'main.php');
             file_put_contents($this->fileMain, $mainFileContents);
             $this->say("Main file created. SUCCESS");
             $this->say("Please check all is correct at: '" . $this->fileMain . "'");
@@ -90,7 +90,7 @@ class RoboFile extends \Robo\Tasks {
         $this->say('3. Creating env file...');
 
         if(\file_exists($this->fileEnv)==false){
-            $envFileContents = file_get_contents(__DIR__ . '/stubs/env.php');
+            $envFileContents = file_get_contents(__DIR__  . DIRECTORY_SEPARATOR .  'stubs' . DIRECTORY_SEPARATOR . 'env.php');
             file_put_contents($this->fileEnv, $envFileContents);
             $this->say("Env file created. SUCCESS");
             $this->say("Please check all is correct at: '" . $this->fileEnv . "'");
@@ -104,7 +104,7 @@ class RoboFile extends \Robo\Tasks {
         // 1. Does the configuration file exists? No => Exit
         $this->say('1. Checking configuration...');
 
-        $this->fileEnv = $this->dirConfig . '/' . $environment . '.php';
+        $this->fileEnv = $this->dirConfig . DIRECTORY_SEPARATOR . $environment . '.php';
 
         if (file_exists($this->fileEnv) == false) {
             return $this->say('Configuration file for environment "' . $environment . '" missing at: ' . $this->fileEnv);
@@ -145,23 +145,22 @@ class RoboFile extends \Robo\Tasks {
         
         // 5. Add required stub files
         $this->say('5. Copying stub files...');
-        $serverlessFileContents = file_get_contents(__DIR__ . '/stubs/serverless.php');
-        file_put_contents($this->dirPhpSlsDeploy . '/serverless.php', $serverlessFileContents);
+        $serverlessFileContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'serverless.php');
+        file_put_contents($this->dirPhpSlsDeploy . DIRECTORY_SEPARATOR . 'serverless.php', $serverlessFileContents);
 
-        $serverlessFileContents = file_get_contents(__DIR__ . '/stubs/serverless.yaml');
+        $serverlessFileContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'serverless.yaml');
         $serverlessFileContents = str_replace('{YOURFUNCTION}', $functionName, $serverlessFileContents);
-        file_put_contents($this->dirPhpSlsDeploy . '/serverless.yaml', $serverlessFileContents);
+        file_put_contents($this->dirPhpSlsDeploy . DIRECTORY_SEPARATOR . 'serverless.yaml', $serverlessFileContents);
 
         // 6. Copy project files
         $this->say('6. Copying files...');
         $this->taskCopyDir([getcwd() => $this->dirPhpSlsDeploy])
                 ->exclude([
                     $this->dirPhpSls,
-                    $this->dirCwd . '/composer.lock',
-                    $this->dirCwd . '/nbproject',
-                    $this->dirCwd . '/node_modules',
-                    //$this->dirCwd . '/phpsls',
-                    $this->dirCwd . '/vendor',
+                    $this->dirCwd . DIRECTORY_SEPARATOR . 'composer.lock',
+                    $this->dirCwd . DIRECTORY_SEPARATOR . 'nbproject',
+                    $this->dirCwd . DIRECTORY_SEPARATOR . 'node_modules',
+                    $this->dirCwd . DIRECTORY_SEPARATOR . 'vendor',
                 ])
                 // ->option('function', $functionName) // Not working since Serverless v.1.5.1
                 ->run();
@@ -186,13 +185,13 @@ class RoboFile extends \Robo\Tasks {
 
         // 6. Prepare for deployment
         $this->say('4. Prepare for deployment...');
-        $this->taskReplaceInFile($this->dirPhpSlsDeploy . '/env.php')
+        $this->taskReplaceInFile($this->dirPhpSlsDeploy . DIRECTORY_SEPARATOR . 'env.php')
                 ->from('"ENVIRONMENT", isLocal() ? "local" : "unrecognized"')
                 ->to('"ENVIRONMENT", "' . $environment . '"')
                 ->run();
         
-        $packageFileContents = file_get_contents(__DIR__ . '/stubs/package.json');
-        file_put_contents($this->dirPhpSlsDeploy . '/package.json', $packageFileContents);
+        $packageFileContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'package.json');
+        file_put_contents($this->dirPhpSlsDeploy . DIRECTORY_SEPARATOR . 'package.json', $packageFileContents);
 
         try {
             $this->say('5. NPM Install Packages...');
