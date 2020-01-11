@@ -261,7 +261,7 @@ class RoboFile extends \Robo\Tasks {
      * @param string $environment
      * @return void
      */
-    function loadEnvConf($environment) {
+    private function loadEnvConf($environment) {
         $envConfigFile = $this->dirConfig . '/' . $environment . '.php';
 
         if (file_exists($envConfigFile)) {
