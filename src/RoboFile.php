@@ -232,18 +232,20 @@ class RoboFile extends \Robo\Tasks {
      */
     public function serve() {
         /* START: Reload enviroment */
-//        \Sinevia\Registry::set("ENVIRONMENT", 'local');
-//        loadEnvConf(\Sinevia\Registry::get("ENVIRONMENT"));
+       \Sinevia\Registry::set("ENVIRONMENT", 'local');
+       $this->loadEnvConf(\Sinevia\Registry::get("ENVIRONMENT"));
         /* END: Reload enviroment */
 
-//        $url = \Sinevia\Registry::get('URL_BASE', '');
-//        if ($url == "") {
-//            return $this->say('URL_BASE not set for local');
-//        }
-//
-//        $domain = str_replace('http://', '', $url);
+       $url = \Sinevia\Registry::get('URL_BASE', '');
+       if ($url == "") {
+           return $this->say('URL_BASE not set for local');
+       }
 
-        $domain = 'localhost:35555';
+       $domain = str_replace(['http://','https://'], '', $url);
+       if($domain==""){
+           $domain = 'localhost:35555';
+       }
+        
         $serverFileContents = file_get_contents(__DIR__ . '/stubs/index.php');
         file_put_contents($this->dirPhpSls . '/index.php', $serverFileContents);
 
@@ -267,7 +269,7 @@ class RoboFile extends \Robo\Tasks {
 
             if (is_array($envConfigVars)) {
                 foreach ($envConfigVars as $key => $value) {
-                    \Sinevia\Registry::setIfNotExists($key, $value);
+                    \Sinevia\Registry::set($key, $value);
                 }
             }
         }
