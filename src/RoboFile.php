@@ -373,6 +373,33 @@ class RoboFile extends \Robo\Tasks {
 
         $this->say('============== END: Migrations =============');
     }
+    
+    
+
+    public function open($environment)
+    {
+        /* START: Reload enviroment */
+        \Sinevia\Registry::set("ENVIRONMENT", $environment);
+        loadEnvConf(\Sinevia\Registry::get("ENVIRONMENT"));
+        /* END: Reload enviroment */
+
+        $url = \Sinevia\Registry::get('URL_BASE', '');
+        if ($url == "") {
+            return $this->say('URL_BASE not set for ' . $environment);
+        }
+
+        if (self::_isWindows()) {
+            $isSuccessful = $this->taskExec('start')
+                ->arg('firefox')
+                ->arg($url)
+                ->run();
+        }
+        if (self::_isWindows() == false) {
+            $isSuccessful = $this->taskExec('firefox')
+                ->arg($url)
+                ->run();
+        }
+    }
 
     /**
      * Serves the application locally using the PHP built-in server
@@ -405,13 +432,34 @@ class RoboFile extends \Robo\Tasks {
                 ->arg($this->dirPhpSls . DIRECTORY_SEPARATOR . 'index.php')
                 ->run();
     }
+    
+    /**
+     * Retrieves the logs from serverless
+     */
+    public function logs($environment)
+    {
+        /* START: Reload enviroment */
+        \Sinevia\Registry::set("ENVIRONMENT", $environment);
+        loadEnvConf(\Sinevia\Registry::get("ENVIRONMENT"));
+        /* END: Reload enviroment */
+
+        $functionName = \Sinevia\Registry::get('SERVERLESS_FUNCTION_NAME', '');
+        if ($functionName == "") {
+            return $this->say('SERVERLESS_FUNCTION_NAME not set for ' . $environment);
+        }
+
+        $this->taskExec('sls')
+            ->arg('logs')
+            ->option('function', $functionName)
+            ->run();
+    }
 
     /**
      * Loads the environment configuration variables
      * @param string $environment
      * @return void
      */
-    private function loadEnvConf($environment) {
+    private function _loadEnvConf($environment) {
         $envConfigFile = $this->dirConfig . DIRECTORY_SEPARATOR . $environment . '.php';
 
         if (file_exists($envConfigFile)) {
@@ -425,25 +473,32 @@ class RoboFile extends \Robo\Tasks {
         }
     }
 
-}
+    /**
+     * Checks whether the script runs on localhost
+     * @return boolean
+     */
+    private static function _isLocal() {
+        if (isset($_SERVER['REMOTE_ADDR']) == false) {
+            return false;
+        }
 
-/**
- * Checks whether the script runs on localhost
- * @return boolean
- */
-function isLocal() {
-    if (isset($_SERVER['REMOTE_ADDR']) == false) {
+        $whitelist = array(
+            '127.0.0.1',
+            '::1'
+        );
+
+        if (in_array($_SERVER['REMOTE_ADDR'], $whitelist)) {
+            return true;
+        }
+
+        false;
+    }
+
+    private static function _isWindows() {
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+            return true;
+        }
         return false;
     }
 
-    $whitelist = array(
-        '127.0.0.1',
-        '::1'
-    );
-
-    if (in_array($_SERVER['REMOTE_ADDR'], $whitelist)) {
-        return true;
-    }
-
-    false;
 }
