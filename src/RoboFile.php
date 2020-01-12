@@ -13,10 +13,10 @@ class RoboFile extends \Robo\Tasks {
     private $fileMain = null;
 
     function __construct() {
-        $this->prepare();
+        $this->_prepare();
     }
 
-    private function prepare() {
+    private function _prepare() {
         $this->dirCwd = getcwd();
         $this->dirConfig = $this->dirCwd . DIRECTORY_SEPARATOR . 'config';
         $this->dirPhpSls = $this->dirCwd . DIRECTORY_SEPARATOR . '.phpsls';
@@ -225,6 +225,156 @@ class RoboFile extends \Robo\Tasks {
     }
 
     /**
+     * Runs the tests
+     * @return boolean true if tests successful, false otherwise
+     */
+    public function test() {
+        /* START: Reload enviroment */
+        \Sinevia\Registry::set("ENVIRONMENT", 'testing');
+        $this->loadEnvConf(\Sinevia\Registry::get("ENVIRONMENT"));
+        /* END: Reload enviroment */
+
+        $testingFramework = \Sinevia\Registry::get('TESTING_FRAMEWORK', ''); // Options: TESTIFY, PHPUNIT, NONE
+
+        if ($testingFramework == "") {
+            return $this->say('TESTING_FRAMEWORK not set in file: ' . $this->$dirConfig . DIRECTORY_SEPARATOR . 'testing.php');
+        }
+
+        if ($testingFramework == "TESTIFY") {
+            return $this->testWithTestify();
+        }
+
+        if ($testingFramework == "PHPUNIT") {
+            return $this->testWithPhpUnit();
+        }
+
+        return true;
+    }
+
+    /**
+     * Testing with PHPUnit
+     * @url https://phpunit.de/index.html
+     * @return boolean true if tests successful, false otherwise
+     */
+    function testWithPhpUnit() {
+        $this->say('Running PHPUnit tests...');
+
+        $isSuccessful = $this->taskExec('composer')
+                ->arg('update')
+                ->option('prefer-dist')
+                ->option('optimize-autoloader')
+                ->run()
+                ->wasSuccessful();
+
+        // 1. Run composer
+        $isSuccessful = $this->taskExec('composer')
+                        ->arg('update')
+                        ->option('prefer-dist')
+                        ->option('optimize-autoloader')
+                        ->run()->wasSuccessful();
+
+        if ($isSuccessful == false) {
+            return false;
+        }
+
+        // 2. Run tests
+        $isSuccessful = $this->taskExec('phpunit')
+                ->dir('vendor/bin')
+                ->option('configuration', '../../phpunit.xml')
+                ->run()
+                ->wasSuccessful();
+
+        if ($isSuccessful == false) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Testing with Testify
+     * @url https://github.com/BafS/Testify.php
+     * @return boolean true if tests successful, false otherwise
+     */
+    private function testWithTestify() {
+        if (file_exists(__DIR__ . '/tests/test.php') == false) {
+            $this->say('Tests Skipped. Not test file at: ' . __DIR__ . '/tests/test.php');
+            return true;
+        }
+
+        $this->say('Running tests...');
+
+        $isSuccessful = $this->taskExec('composer')
+                ->arg('update')
+                ->option('prefer-dist')
+                ->option('optimize-autoloader')
+                ->run()
+                ->wasSuccessful();
+
+        $result = $this->taskExec('php')
+                ->dir('tests')
+                ->arg('test.php')
+                ->printOutput(true)
+                ->run();
+
+        $output = trim($result->getMessage());
+
+        if ($result->wasSuccessful() == false) {
+            $this->say('Test Failed');
+            return false;
+        }
+
+        if ($output == "") {
+            $output = shell_exec('php tests/test.php'); // Re-test, as no output on Linux Mint
+            if (trim($output == "")) {
+                $this->say('Tests Failed. No output');
+                return false;
+            }
+        }
+
+        if (strpos($output, 'Tests: [fail]') > -1) {
+            $this->say('Tests Failed');
+            return false;
+        }
+
+        $this->say('Tests Successful');
+
+        return true;
+    }
+
+    public function migrate($environment) {
+        $this->say('============= START: Migrations ============');
+
+        // 1. Does the configuration file exists? No => Exit
+        $this->say('1. Checking configuration for environment "' . $environment . '"...');
+        $envConfigFile = \Sinevia\Registry::get('DIR_CONFIG') . '/' . $environment . '.php';
+
+        if (file_exists($envConfigFile) == false) {
+            return $this->say('Configuration file for environment "' . $environment . '" missing at: ' . $envConfigFile);
+        }
+
+        // 2. Load the configuration file for the enviroment
+        $this->say('2. Loading configuration for environment "' . $environment . '"...');
+        \Sinevia\Registry::set("ENVIRONMENT", $environment);
+        loadEnvConf(\Sinevia\Registry::get("ENVIRONMENT"));
+
+        $this->say('3. Preparing for running migratons...');
+
+
+        require 'app/functions.php';
+
+        $this->say('4. Running migrations ...');
+        \Sinevia\Migrate::setDirectoryMigration(\Sinevia\Registry::get('DIR_MIGRATIONS_DIR'));
+        \Sinevia\Migrate::setDatabase(db());
+        \Sinevia\Migrate::$verbose = false;
+        \Sinevia\Migrate::up();
+
+        $this->say('5. Migrations finished ...');
+
+        $this->say('============== END: Migrations =============');
+    }
+
+    /**
      * Serves the application locally using the PHP built-in server
      * @return void
      */
@@ -247,7 +397,9 @@ class RoboFile extends \Robo\Tasks {
         $serverFileContents = file_get_contents(__DIR__ . '/stubs/index.php');
         file_put_contents($this->dirPhpSls . DIRECTORY_SEPARATOR . 'index.php', $serverFileContents);
 
-        $isSuccessful = $this->taskExec('php')
+        $isSuccessful = $this
+                ->taskOpenBrowser($url)
+                ->taskExec('php')
                 ->arg('-S')
                 ->arg($domain)
                 ->arg($this->dirPhpSls . DIRECTORY_SEPARATOR . 'index.php')
