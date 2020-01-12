@@ -118,10 +118,10 @@ class RoboFile extends \Robo\Tasks {
         // 1. Does the configuration file exists? No => Exit
         $this->say('1. Checking configuration...');
 
-        $this->fileEnv = $this->dirConfig . DIRECTORY_SEPARATOR . $environment . '.php';
+        $this->fileConfigEnvironment = $this->dirConfig . DIRECTORY_SEPARATOR . $environment . '.php';
 
-        if (file_exists($this->fileEnv) == false) {
-            return $this->say('Configuration file for environment "' . $environment . '" missing at: ' . $this->fileEnv);
+        if (file_exists($this->fileConfigEnvironment) == false) {
+            return $this->say('Configuration file for environment "' . $environment . '" missing at: ' . $this->fileConfigEnvironment);
         }
 
         if (file_exists($this->fileMain) == false) {
@@ -361,26 +361,30 @@ class RoboFile extends \Robo\Tasks {
         $this->say('============= START: Migrations ============');
 
         // 1. Does the configuration file exists? No => Exit
-        $this->say('1. Checking configuration for environment "' . $environment . '"...');
-        $envConfigFile = \Sinevia\Registry::get('DIR_CONFIG') . '/' . $environment . '.php';
+        $this->say('1. Checking configuration...');
 
-        if (file_exists($envConfigFile) == false) {
-            return $this->say('Configuration file for environment "' . $environment . '" missing at: ' . $envConfigFile);
+        $this->fileConfigEnvironment = $this->dirConfig . DIRECTORY_SEPARATOR . $environment . '.php';
+
+        if (file_exists($this->fileConfigEnvironment) == false) {
+            return $this->say('Configuration file for environment "' . $environment . '" missing at: ' . $this->fileConfigEnvironment);
+        }
+
+        if (file_exists($this->fileMain) == false) {
+            return $this->say('Main file with function "main()" missing at: ' . $this->fileMain);
         }
 
         // 2. Load the configuration file for the enviroment
-        $this->say('2. Loading configuration for environment "' . $environment . '"...');
         \Sinevia\Registry::set("ENVIRONMENT", $environment);
         $this->_loadEnvConf(\Sinevia\Registry::get("ENVIRONMENT"));
 
         $this->say('3. Preparing for running migratons...');
 
-
-        require 'app/functions.php';
+        require_once 'app/functions.php';
 
         $this->say('4. Running migrations ...');
-        \Sinevia\Migrate::setDirectoryMigration(\Sinevia\Registry::get('DIR_MIGRATIONS_DIR'));
-        \Sinevia\Migrate::setDatabase(db());
+        $db = eloquent();
+        \Sinevia\Migrate::setDirectoryMigration(\Sinevia\Registry::get('DIR_MIGRATIONS'));
+        \Sinevia\Migrate::setDatabase($db->getConnection()->getPdo());
         \Sinevia\Migrate::$verbose = false;
         \Sinevia\Migrate::up();
 
@@ -411,6 +415,49 @@ class RoboFile extends \Robo\Tasks {
                     ->arg($url)
                     ->run();
         }
+    }
+
+    public function seed($environment, $className) {
+        $this->say('============= START: Seed ============');
+
+        // 1. Does the configuration file exists? No => Exit
+        $this->say('1. Checking configuration...');
+
+        $this->fileConfigEnvironment = $this->dirConfig . DIRECTORY_SEPARATOR . $environment . '.php';
+
+        if (file_exists($this->fileConfigEnvironment) == false) {
+            return $this->say('Configuration file for environment "' . $environment . '" missing at: ' . $this->fileConfigEnvironment);
+        }
+
+        if (file_exists($this->fileMain) == false) {
+            return $this->say('Main file with function "main()" missing at: ' . $this->fileMain);
+        }
+
+        // 2. Load the configuration file for the enviroment
+        \Sinevia\Registry::set("ENVIRONMENT", $environment);
+        $this->_loadEnvConf(\Sinevia\Registry::get("ENVIRONMENT"));
+
+        $this->say('3. Preparing for running seed...');
+
+        $dirSeeds = \Sinevia\Registry::get("DIR_SEEDS");
+        $classPath = $dirSeeds . DIRECTORY_SEPARATOR . $className . '.php';
+        require_once $classPath;
+
+        $this->say('4. Running seed ...');
+
+        if (class_exists($className) == false) {
+            return $this->say('Class "' . $className . '" DOES NOT EXIST at location ' . $classPath . ' . FAILED');
+        }
+        
+        $seedInstance = new $className;
+        
+        if(method_exists($seedInstance, 'run')==false){
+            return $this->say('Class "' . $className . '" DOES NOT HAVE a "run" method . FAILED');
+        }
+        
+        $seedInstance->run();
+        
+        $this->say('============== END: Seed =============');
     }
 
     /**
