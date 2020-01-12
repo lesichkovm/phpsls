@@ -115,7 +115,7 @@ class RoboFile extends \Robo\Tasks {
 
         // 2. Load the configuration file for the enviroment
         \Sinevia\Registry::set("ENVIRONMENT", $environment);
-        $this->loadEnvConf(\Sinevia\Registry::get("ENVIRONMENT"));
+        $this->_loadEnvConf(\Sinevia\Registry::get("ENVIRONMENT"));
 
         // 3. Check if serverless function name is set
         $functionName = \Sinevia\Registry::get('SERVERLESS_FUNCTION_NAME', '');
@@ -231,7 +231,7 @@ class RoboFile extends \Robo\Tasks {
     public function test() {
         /* START: Reload enviroment */
         \Sinevia\Registry::set("ENVIRONMENT", 'testing');
-        $this->loadEnvConf(\Sinevia\Registry::get("ENVIRONMENT"));
+        $this->_loadEnvConf(\Sinevia\Registry::get("ENVIRONMENT"));
         /* END: Reload enviroment */
 
         $testingFramework = \Sinevia\Registry::get('TESTING_FRAMEWORK', ''); // Options: TESTIFY, PHPUNIT, NONE
@@ -356,7 +356,7 @@ class RoboFile extends \Robo\Tasks {
         // 2. Load the configuration file for the enviroment
         $this->say('2. Loading configuration for environment "' . $environment . '"...');
         \Sinevia\Registry::set("ENVIRONMENT", $environment);
-        loadEnvConf(\Sinevia\Registry::get("ENVIRONMENT"));
+        $this->_loadEnvConf(\Sinevia\Registry::get("ENVIRONMENT"));
 
         $this->say('3. Preparing for running migratons...');
 
@@ -380,7 +380,7 @@ class RoboFile extends \Robo\Tasks {
     {
         /* START: Reload enviroment */
         \Sinevia\Registry::set("ENVIRONMENT", $environment);
-        loadEnvConf(\Sinevia\Registry::get("ENVIRONMENT"));
+        $this->_loadEnvConf(\Sinevia\Registry::get("ENVIRONMENT"));
         /* END: Reload enviroment */
 
         $url = \Sinevia\Registry::get('URL_BASE', '');
@@ -408,7 +408,7 @@ class RoboFile extends \Robo\Tasks {
     public function serve() {
         /* START: Reload enviroment */
         \Sinevia\Registry::set("ENVIRONMENT", 'local');
-        $this->loadEnvConf(\Sinevia\Registry::get("ENVIRONMENT"));
+        $this->_loadEnvConf(\Sinevia\Registry::get("ENVIRONMENT"));
         /* END: Reload enviroment */
 
         $url = \Sinevia\Registry::get('URL_BASE', '');
@@ -440,7 +440,7 @@ class RoboFile extends \Robo\Tasks {
     {
         /* START: Reload enviroment */
         \Sinevia\Registry::set("ENVIRONMENT", $environment);
-        loadEnvConf(\Sinevia\Registry::get("ENVIRONMENT"));
+        $this->_loadEnvConf(\Sinevia\Registry::get("ENVIRONMENT"));
         /* END: Reload enviroment */
 
         $functionName = \Sinevia\Registry::get('SERVERLESS_FUNCTION_NAME', '');
