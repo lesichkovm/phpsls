@@ -1,8 +1,10 @@
 <?php
 
 return [
-    'URL_BASE' => "none",
-    "USE_ELOQUENT" => true,
+    'URL_BASE' => 'NONE',
+    'TESTING_FRAMEWORK' => 'PHPUNIT', // Options: TESTIFY, PHPUNIT, NONE
+    // Example: Database with Eloquent, delete if not needed
+    'USE_ELOQUENT' => true,
     'DB' => [
         'default_connection' => 'testing',
         'connections' => [
