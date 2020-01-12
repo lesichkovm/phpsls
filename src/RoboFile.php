@@ -44,7 +44,7 @@ class RoboFile extends \Robo\Tasks {
             return false;
         }
 
-        if ($environment != "local"){
+        if ($environment != "local") {
             $functionName = trim($this->ask('What would you like your function to be called?'));
 
             if ($functionName == "") {
@@ -54,50 +54,49 @@ class RoboFile extends \Robo\Tasks {
         }
 
 
-        $this->say('1. Creating config file for "'.$environment.'" environment...');
-        
+        $this->say('1. Creating config file for "' . $environment . '" environment...');
+
         $this->fileEnvConfig = $this->dirConfig . DIRECTORY_SEPARATOR . $environment . '.php';
 
-        
+
         if (\is_dir($this->dirConfig) == false) {
             \mkdir($this->dirConfig);
         }
 
-        if(\file_exists($this->fileEnvConfig)==false){
-            $stub = $environment=="local" ? "config-local.php" : "config.php";
-            $configFileContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR .  'stubs' . DIRECTORY_SEPARATOR . $stub);
-            if($environment!="local"){
+        if (\file_exists($this->fileEnvConfig) == false) {
+            $stub = $environment == "local" ? "config-local.php" : "config.php";
+            $configFileContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . $stub);
+            if ($environment != "local") {
                 $configFileContents = \str_replace("{YOURFUNCTION}", $functionName, $configFileContents);
             }
             file_put_contents($this->fileEnvConfig, $configFileContents);
-            $this->say("Configuration file for environment '".$environment."' created. SUCCESS");
+            $this->say("Configuration file for environment '" . $environment . "' created. SUCCESS");
             $this->say("Please check all is correct at: '" . $this->fileEnvConfig . "'");
         } else {
-            $this->say("Configuration file for environment '".$environment."' already exists at ".$this->fileEnvConfig.". SKIPPED");
+            $this->say("Configuration file for environment '" . $environment . "' already exists at " . $this->fileEnvConfig . ". SKIPPED");
         }
 
         $this->say('2. Creating main file...');
 
-        if(\file_exists($this->fileMain)==false){
-            $mainFileContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR .  'stubs' . DIRECTORY_SEPARATOR . 'main.php');
+        if (\file_exists($this->fileMain) == false) {
+            $mainFileContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'main.php');
             file_put_contents($this->fileMain, $mainFileContents);
             $this->say("Main file created. SUCCESS");
             $this->say("Please check all is correct at: '" . $this->fileMain . "'");
         } else {
-            $this->say("Main file already exists at ".$this->fileMain.". SKIPPED");
+            $this->say("Main file already exists at " . $this->fileMain . ". SKIPPED");
         }
 
         $this->say('3. Creating env file...');
 
-        if(\file_exists($this->fileEnv)==false){
-            $envFileContents = file_get_contents(__DIR__  . DIRECTORY_SEPARATOR .  'stubs' . DIRECTORY_SEPARATOR . 'env.php');
+        if (\file_exists($this->fileEnv) == false) {
+            $envFileContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'env.php');
             file_put_contents($this->fileEnv, $envFileContents);
             $this->say("Env file created. SUCCESS");
             $this->say("Please check all is correct at: '" . $this->fileEnv . "'");
         } else {
-            $this->say("Env file already exists at ".$this->fileEnv.". SKIPPED");
+            $this->say("Env file already exists at " . $this->fileEnv . ". SKIPPED");
         }
-
     }
 
     public function deploy($environment) {
@@ -142,7 +141,7 @@ class RoboFile extends \Robo\Tasks {
         }
 
         $this->taskCleanDir([$this->dirPhpSlsDeploy])->run();
-        
+
         // 5. Add required stub files
         $this->say('5. Copying stub files...');
         $serverlessFileContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'serverless.php');
@@ -189,7 +188,7 @@ class RoboFile extends \Robo\Tasks {
                 ->from('"ENVIRONMENT", isLocal() ? "local" : "unrecognized"')
                 ->to('"ENVIRONMENT", "' . $environment . '"')
                 ->run();
-        
+
         $packageFileContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'package.json');
         file_put_contents($this->dirPhpSlsDeploy . DIRECTORY_SEPARATOR . 'package.json', $packageFileContents);
 
@@ -218,12 +217,11 @@ class RoboFile extends \Robo\Tasks {
 
         // 8. Cleanup after deployment
         $this->say('6. Cleaning up...');
-        
+
         // 8. Cleanup after deployment
         $this->say('7. Opening URL...');
         $urlBase = \Sinevia\Registry::get('URL_BASE', '');
         $this->taskOpenBrowser($urlBase)->run();
-        
     }
 
     /**
@@ -232,27 +230,27 @@ class RoboFile extends \Robo\Tasks {
      */
     public function serve() {
         /* START: Reload enviroment */
-       \Sinevia\Registry::set("ENVIRONMENT", 'local');
-       $this->loadEnvConf(\Sinevia\Registry::get("ENVIRONMENT"));
+        \Sinevia\Registry::set("ENVIRONMENT", 'local');
+        $this->loadEnvConf(\Sinevia\Registry::get("ENVIRONMENT"));
         /* END: Reload enviroment */
 
-       $url = \Sinevia\Registry::get('URL_BASE', '');
-       if ($url == "") {
-           return $this->say('URL_BASE not set for local');
-       }
+        $url = \Sinevia\Registry::get('URL_BASE', '');
+        if ($url == "") {
+            return $this->say('URL_BASE not set for local');
+        }
 
-       $domain = str_replace(['http://','https://'], '', $url);
-       if($domain==""){
-           $domain = 'localhost:35555';
-       }
-        
+        $domain = str_replace(['http://', 'https://'], '', $url);
+        if ($domain == "") {
+            $domain = 'localhost:35555';
+        }
+
         $serverFileContents = file_get_contents(__DIR__ . '/stubs/index.php');
-        file_put_contents($this->dirPhpSls . '/index.php', $serverFileContents);
+        file_put_contents($this->dirPhpSls . DIRECTORY_SEPARATOR . 'index.php', $serverFileContents);
 
         $isSuccessful = $this->taskExec('php')
                 ->arg('-S')
                 ->arg($domain)
-                ->arg($this->dirPhpSls . '/index.php')
+                ->arg($this->dirPhpSls . DIRECTORY_SEPARATOR . 'index.php')
                 ->run();
     }
 
@@ -262,7 +260,7 @@ class RoboFile extends \Robo\Tasks {
      * @return void
      */
     private function loadEnvConf($environment) {
-        $envConfigFile = $this->dirConfig . '/' . $environment . '.php';
+        $envConfigFile = $this->dirConfig . DIRECTORY_SEPARATOR . $environment . '.php';
 
         if (file_exists($envConfigFile)) {
             $envConfigVars = include($envConfigFile);
