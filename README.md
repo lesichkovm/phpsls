@@ -5,3 +5,6 @@
 
 ## Installation
 composer require lesichkovm/phpsls
+
+## Documentation
+https://phpsls.lesichkov.co.uk
