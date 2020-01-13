@@ -6,14 +6,10 @@ $environment = "local"; // !!! Do not change will be modified automatically duri
 
 /* FILE SYSTEM */
 \Sinevia\Registry::setIfNotExists("DIR_BASE", __DIR__);
-// \Sinevia\Registry::setIfNotExists("DIR_APP", __DIR__ . '/app');
-// \Sinevia\Registry::setIfNotExists("DIR_MIGRATIONS_DIR", __DIR__ . '/app/database/migrations/');
-
-/* FILE SYSTEM */
-\Sinevia\Registry::setIfNotExists("DIR_BASE", __DIR__);
-\Sinevia\Registry::setIfNotExists("DIR_APP", __DIR__ . '/app');
-\Sinevia\Registry::setIfNotExists("DIR_CONFIG", __DIR__ . '/config');
-\Sinevia\Registry::setIfNotExists("DIR_MIGRATIONS", __DIR__ . '/app/database/migrations/');
+\Sinevia\Registry::setIfNotExists("DIR_APP", __DIR__ . DIRECTORY_SEPARATOR . 'app');
+\Sinevia\Registry::setIfNotExists("DIR_CONFIG", __DIR__ . DIRECTORY_SEPARATOR . 'config');
+\Sinevia\Registry::setIfNotExists("DIR_MIGRATIONS", __DIR__  . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'database' . DIRECTORY_SEPARATOR . 'migrations');
+\Sinevia\Registry::setIfNotExists("DIR_SEEDS", __DIR__ . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'database' . DIRECTORY_SEPARATOR . 'seeds');
 \Sinevia\Registry::setIfNotExists("USE_ELOQUENT", true);
 
 /*
