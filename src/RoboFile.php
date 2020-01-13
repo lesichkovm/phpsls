@@ -200,8 +200,8 @@ class RoboFile extends \Robo\Tasks {
         // 6. Prepare for deployment
         $this->say('4. Prepare for deployment...');
         $this->taskReplaceInFile($this->dirPhpSlsDeploy . DIRECTORY_SEPARATOR . 'env.php')
-                ->from('"ENVIRONMENT", isLocal() ? "local" : "unrecognized"')
-                ->to('"ENVIRONMENT", "' . $environment . '"')
+                ->from('$environment = "local"; // !!! Do not change will be modified automatically during deployment')
+                ->to('$environment = "' . $environment . '"; // !!! Do not change will be modified automatically during deployment')
                 ->run();
 
         $packageFileContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'package.json');
