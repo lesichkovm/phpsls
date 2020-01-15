@@ -38,6 +38,9 @@ class RoboFile extends \Robo\Tasks {
         }
     }
 
+    /**
+     * Initializes an environment
+     */
     public function init() {
         $environment = trim($this->ask('What environment do you want to initialize: local, staging, live?'));
 
@@ -114,6 +117,10 @@ class RoboFile extends \Robo\Tasks {
         }
     }
 
+    /**
+     * Deploys an environment to the serverless action
+     * specified in its configuration file
+     */
     public function deploy($environment) {
         // 1. Does the configuration file exists? No => Exit
         $this->say('1. Checking configuration...');
@@ -129,18 +136,22 @@ class RoboFile extends \Robo\Tasks {
         }
 
         // 2. Load the configuration file for the enviroment
+        $this->say('2. Loading configuratiion file for environment "' . $environment . '" ...');
         \Sinevia\Registry::set("ENVIRONMENT", $environment);
         $this->_loadEnvConf(\Sinevia\Registry::get("ENVIRONMENT"));
 
         // 3. Check if serverless function name is set
+        $this->say('3. Checking if serverless function name set for environment "' . $environment . '" ...');
         $functionName = \Sinevia\Registry::get('SERVERLESS_FUNCTION_NAME', '');
 
         if ($functionName == "") {
             return $this->say('SERVERLESS_FUNCTION_NAME not set for environment "' . $environment . '"');
+        } else {
+            $this->say('SERVERLESS_FUNCTION_NAME is set as "' . $functionName . '"');
         }
 
         if ($functionName == "{YOUR_LIVE_SERVERLESS_FUNCTION_NAME}") {
-            return $this->say('SERVERLESS_FUNCTION_NAME not set for environment "' . $environment . '"');
+            return $this->say('SERVERLESS_FUNCTION_NAME not correct for environment "' . $environment . '"');
         }
 
         // 4. Create deployment directory
@@ -179,14 +190,15 @@ class RoboFile extends \Robo\Tasks {
                 // ->option('function', $functionName) // Not working since Serverless v.1.5.1
                 ->run();
 
-        // 4. Run tests
-        $this->say('2. Running tests...');
-        //$isSuccessful = $this->test();
-        //if ($isSuccessful == false) {
-        //    return $this->say('Failed');
-        //}
-        // 5. Run composer (no-dev)
-        $this->say('3. Updating composer dependencies...');
+        // 7. Run tests
+        $this->say('7. Running tests...');
+        $isSuccessful = $this->test();
+        if ($isSuccessful == false) {
+           return $this->say('Failed');
+        }
+
+        // 8. Run composer (no-dev)
+        $this->say('8. Updating composer dependencies...');
         $isSuccessful = $this->taskExec('composer')
                         ->arg('update')
                         ->option('prefer-dist')
@@ -197,8 +209,8 @@ class RoboFile extends \Robo\Tasks {
             return $this->say('Failed.');
         }
 
-        // 6. Prepare for deployment
-        $this->say('4. Prepare for deployment...');
+        // 9. Prepare for deployment
+        $this->say('9. Prepare for deployment...');
         $this->taskReplaceInFile($this->dirPhpSlsDeploy . DIRECTORY_SEPARATOR . 'env.php')
                 ->from('$environment = "local"; // !!! Do not change will be modified automatically during deployment')
                 ->to('$environment = "' . $environment . '"; // !!! Do not change will be modified automatically during deployment')
@@ -217,9 +229,9 @@ class RoboFile extends \Robo\Tasks {
             $this->say('There was an exception: ' . $e->getMessage());
         }
 
-        // 7. Deploy
+        // 10. Deploy
         try {
-            $this->say('5. Deploying...');
+            $this->say('10. Deploying...');
             $this->taskExec('sls')
                     ->arg('deploy')
                     // ->option('function', $functionName) // Not working since Serverless v.1.5.1
@@ -230,11 +242,11 @@ class RoboFile extends \Robo\Tasks {
             return;
         }
 
-        // 8. Cleanup after deployment
-        $this->say('6. Cleaning up...');
+        // 11. Cleanup after deployment
+        $this->say('11. Cleaning up...');
 
-        // 8. Cleanup after deployment
-        $this->say('7. Opening URL...');
+        // 12. Cleanup after deployment
+        $this->say('12. Opening URL...');
         $urlBase = \Sinevia\Registry::get('URL_BASE', '');
         $this->taskOpenBrowser($urlBase)->run();
     }
