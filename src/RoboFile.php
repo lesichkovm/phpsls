@@ -201,6 +201,7 @@ class RoboFile extends \Robo\Tasks {
         $this->say('8. Updating composer dependencies...');
         $isSuccessful = $this->taskExec('composer')
                         ->arg('update')
+                        ->option('no-dev')
                         ->option('prefer-dist')
                         ->option('optimize-autoloader')
                         ->dir($this->dirPhpSlsDeploy)
