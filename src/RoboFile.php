@@ -42,7 +42,7 @@ class RoboFile extends \Robo\Tasks {
      * Initializes an environment
      */
     public function init() {
-        $environment = trim($this->ask('What environment do you want to initialize: local, staging, live?'));
+        $environment = trim($this->ask('What environment do you want to initialize (i.e local, staging, live)?'));
 
         if ($environment == "") {
             $this->say("Environment cannot be empty. FAILED");
@@ -57,6 +57,15 @@ class RoboFile extends \Robo\Tasks {
                 return false;
             }
         }
+
+        $testSuites = ['phpunit', 'testify', 'none'];
+        $testSuite = trim($this->ask('What testing suite do you want to initialize (select one of: ' . implode(',', $testSuites) . ')?'));
+
+        if (in_array($testSuite, $testSuites) == false) {
+            $this->say('Only "' . implode('", "', $testSuites) . '" are supported. FAILED');
+            return false;
+        }
+
 
         $this->say('1. Creating config directry, if missing ...');
 
@@ -87,6 +96,7 @@ class RoboFile extends \Robo\Tasks {
         if (\file_exists($this->fileConfigTesting) == false) {
             $stub = "config-testing.php";
             $configFileContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . $stub);
+            $configFileContents = str_replace('{{ TESTING_FRAMEWORK }}', strtoupper($testSuite), $configFileContents);
             file_put_contents($this->fileConfigTesting, $configFileContents);
             $this->say("Configuration file for environment 'testing' created. SUCCESS");
             $this->say("Please check all is correct at: '" . $this->fileConfigTesting . "'");
@@ -194,7 +204,7 @@ class RoboFile extends \Robo\Tasks {
         $this->say('7. Running tests...');
         $isSuccessful = $this->test();
         if ($isSuccessful == false) {
-           return $this->say('Failed');
+            return $this->say('Failed');
         }
 
         // 8. Run composer (no-dev)
@@ -461,15 +471,15 @@ class RoboFile extends \Robo\Tasks {
         if (class_exists($className) == false) {
             return $this->say('Class "' . $className . '" DOES NOT EXIST at location ' . $classPath . ' . FAILED');
         }
-        
+
         $seedInstance = new $className;
-        
-        if(method_exists($seedInstance, 'run')==false){
+
+        if (method_exists($seedInstance, 'run') == false) {
             return $this->say('Class "' . $className . '" DOES NOT HAVE a "run" method . FAILED');
         }
-        
+
         $seedInstance->run();
-        
+
         $this->say('============== END: Seed =============');
     }
 
