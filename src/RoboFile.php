@@ -272,8 +272,7 @@ class RoboFile extends \Robo\Tasks {
 
         // 12. Cleanup after deployment
         $this->say('12. Opening URL...');
-        $urlBase = \Sinevia\Registry::get('URL_BASE', '');
-        $this->taskOpenBrowser($urlBase)->run();
+        $this->open($environment);
     }
 
     /**
