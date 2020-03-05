@@ -1,37 +1,26 @@
-service: {YOURFUNCTION} # !!! Do not change will be modified automatically during deployment
-package:
-  exclude:
-    - .git/**
-    - .serverless/**
-    - .vagrant/**
-    - .vscode/**
-    - nbproject/**
-    - new/**
-    - old/**
-    - tests/**
-    - vendor/bin/**
-    - .gitignore
-    - .travis.yml
-    - composer.json
-    - composer.lock
-    - package.json
-    - package-lock.json
-    - phpunit.xml
-    - RoboFile.php
+service: app
 
 provider:
     name: aws
     region: us-east-1
     runtime: provided
 
-functions:
-  {YOURFUNCTION}: # !!! Do not change will be modified automatically during deployment
-    handler: serverless.run
-    name: {YOURFUNCTION} # !!! Do not change will be modified automatically during deployment
-    annotations:
-      web-export: true
-    layers:
-            - ${bref:layer.php-73}
-
 plugins:
-  - ./vendor/bref/bref
+    - ./vendor/bref/bref
+
+functions:
+    api:
+        handler: index.php
+        description: ''
+        timeout: 28 # in seconds (API Gateway has a timeout of 29 seconds)
+        layers:
+            - ${bref:layer.php-73-fpm}
+        events:
+            -   http: 'ANY /'
+            -   http: 'ANY /{proxy+}'
+
+# Exclude files from deployment
+package:
+    exclude:
+        - 'node_modules/**'
+        - 'tests/**'

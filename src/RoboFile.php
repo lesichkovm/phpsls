@@ -164,6 +164,16 @@ class RoboFile extends \Robo\Tasks {
             return $this->say('SERVERLESS_FUNCTION_NAME not correct for environment "' . $environment . '"');
         }
 
+        // 3. Check if serverless provider is set
+        $this->say('3. Checking if serverless provider is supported for "' . $environment . '" ...');
+        $serverlessProvider = strtolower(\Sinevia\Registry::get('SERVERLESS_PROVIDER', 'ibm'));
+        $supportedProviders = ['aws', 'ibm'];
+        if (in_array($serverlessProvider, $supportedProviders) == false) {
+            return $this->say('SERVERLESS_PROVIDER not supported "' . $serverlessProvider . '"');
+        }
+        
+        $this->say('SERVERLESS_PROVIDER is set as "' . $serverlessProvider . '"');
+
         // 4. Create deployment directory
         $this->say('4. Creating deployment directory...');
         if (file_exists($this->dirPhpSlsDeploy) == false) {
@@ -183,7 +193,11 @@ class RoboFile extends \Robo\Tasks {
         $serverlessFileContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'serverless.php');
         file_put_contents($this->dirPhpSlsDeploy . DIRECTORY_SEPARATOR . 'serverless.php', $serverlessFileContents);
 
-        $serverlessFileContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'serverless.yaml');
+        $serverlessConfigFile = 'serverless-ibm.yaml';
+        if($serverlessProvider=='aws'){
+            $serverlessConfigFile = 'serverless-aws.yaml';
+        }
+        $serverlessFileContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . $serverlessConfigFile);
         $serverlessFileContents = str_replace('{YOURFUNCTION}', $functionName, $serverlessFileContents);
         file_put_contents($this->dirPhpSlsDeploy . DIRECTORY_SEPARATOR . 'serverless.yaml', $serverlessFileContents);
 
@@ -532,6 +546,7 @@ class RoboFile extends \Robo\Tasks {
         $this->taskExec('sls')
                 ->arg('logs')
                 ->option('function', $functionName)
+                ->dir($this->dirPhpSlsDeploy)
                 ->run();
     }
 
