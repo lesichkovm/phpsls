@@ -137,6 +137,63 @@ class RoboFile extends \Robo\Tasks
             $this->say("Env file already exists at " . $this->fileEnv . ". SKIPPED");
         }
 
+        $this->say('6. Creating composer.json file, if missing ...');
+        if (\file_exists($this->dirCwd.'/composer.json') == false) {
+            $composerJson = [
+                'require'=>[
+                    "dg/composer-cleaner" => "v2.1",        
+                ],
+                'require-dev'=>[
+                    "lesichkovm/phpsls" => "^1.0",
+                    "phpunit/phpunit"=> "8.5.1",
+                ],
+                "config"=> [
+                    "optimize-autoloader"=> true,
+                    "preferred-install"=> "dist",
+                    "sort-packages"=> true,
+                ],
+                "minimum-stability"=> "dev",
+                "prefer-stable"=> true,
+                "extra"=> [
+                    "cleaner-ignore"=> [
+                        "phpunit/phpunit"=> true,
+                        "vlucas/valitron"=> true,
+                    ]
+                ]
+            ];
+            file_put_contents($this->dirCwd.'/composer.json', \json_encode($composerJson,JSON_PRETTY_PRINT));
+        }
+
+        $this->say('7. Updating composer.json file ...');
+        $composerJson = json_decode(file_get_contents($this->dirCwd.'/composer.json'), true);
+        if($composerJson==null){
+            $this->say("File \"composer.json\" missing. FAILED");
+            return false;
+        }
+        $autoloadFiles = $composerJson['autoload']['files']??[];
+        \array_unshift($autoloadFiles, "main.php"); // Second
+        \array_unshift($autoloadFiles, "env.php");  // First
+        $composerJson['autoload']['files']=\array_values(\array_unique($autoloadFiles));
+        $composerJson['autoload']['psr-4']['App\\']="app/";
+        $composerJson['autoload']['psr-4']['Tests\\']="tests/";
+    
+        file_put_contents($this->dirCwd.'/composer.json', \json_encode($composerJson,JSON_PRETTY_PRINT));
+        
+        // 8. Run composer (with dev)
+        // $this->say('8. Updating composer dependencies...');
+
+        // $isSuccessful = $this->taskExec('composer')
+        //     ->arg('update')
+        //     ->option('prefer-dist')
+        //     ->option('optimize-autoloader')
+        //     ->dir($this->dirCwd)
+        //     ->run()->wasSuccessful();
+        // if ($isSuccessful == false) {
+        //     return $this->say('Failed.');
+        // }
+
+        $this->say('8. Please run "composer update" to update dependencies');
+
         return true;
     }
 

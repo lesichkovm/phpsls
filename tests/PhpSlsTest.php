@@ -31,10 +31,11 @@ class PhpSlsTest extends \PHPUnit\Framework\TestCase
         $this->assertTrue(is_dir($robo->dirConfig));
         $this->assertTrue(file_exists($robo->fileEnv));
         $this->assertTrue(file_exists($robo->fileMain));
+        $this->assertTrue(file_exists($robo->dirCwd.'/composer.json'));
     }
 
     public function tearDown(): void
     {
-        Helper::dirFsDelete();
+        //Helper::dirFsDelete();
     }
 }

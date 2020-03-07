@@ -1,5 +1,6 @@
-/.phpsls
-/config
+/.phpsls/
+/config/
+/tests/fs/
 /vendor
 /.phpunit.result.cache
 /composer.lock
