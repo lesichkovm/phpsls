@@ -7,6 +7,9 @@
         }
     ],
     "autoload": {
+        "files":[
+             "src/functions.php"
+        ],
         "psr-4": {
             "PHPServerless\\": "src/"
         }
