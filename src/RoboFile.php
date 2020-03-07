@@ -5,14 +5,14 @@ namespace PHPServerless;
 class RoboFile extends \Robo\Tasks
 {
 
-    private $dirCwd = null;
-    private $dirPhpSls = null;
-    private $dirConfig = null;
-    private $dirPhpSlsDeploy = null;
-    private $fileEnv = null;
-    private $fileConfigEnvironment = null;
-    private $fileConfigTesting = null;
-    private $fileMain = null;
+    public $dirCwd = null;
+    public $dirPhpSls = null;
+    public $dirConfig = null;
+    public $dirPhpSlsDeploy = null;
+    public $fileEnv = null;
+    public $fileConfigEnvironment = null;
+    public $fileConfigTesting = null;
+    public $fileMain = null;
 
     function __construct()
     {
@@ -78,9 +78,6 @@ class RoboFile extends \Robo\Tasks
             return false;
         }
 
-
-        return true;
-
         $this->say('1. Creating config directry, if missing ...');
 
         if (\is_dir($this->dirConfig) == false) {
@@ -139,6 +136,8 @@ class RoboFile extends \Robo\Tasks
         } else {
             $this->say("Env file already exists at " . $this->fileEnv . ". SKIPPED");
         }
+
+        return true;
     }
 
     /**

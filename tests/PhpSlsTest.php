@@ -23,15 +23,14 @@ class PhpSlsTest extends \PHPUnit\Framework\TestCase
 
     public function testInit()
     {
-
-        $roboFilePath = dirname(__DIR__) . '/src/RoboFile.php';
-        require_once($roboFilePath);
-
-        $robo = new \PHPServerless\RoboFile;
+        $robo = Helper::roboPrepared();
 
         $isSuccess = $robo->init("local", "", "none");
 
         $this->assertTrue($isSuccess);
+        $this->assertTrue(is_dir($robo->dirConfig));
+        $this->assertTrue(file_exists($robo->fileEnv));
+        $this->assertTrue(file_exists($robo->fileMain));
     }
 
     public function tearDown(): void
