@@ -25,7 +25,7 @@ class RoboFile extends \Robo\Tasks
         $this->dirConfig = $this->dirCwd . DIRECTORY_SEPARATOR . 'config';
         $this->dirPhpSls = $this->dirCwd . DIRECTORY_SEPARATOR . '.phpsls';
         $this->dirPhpSlsDeploy = $this->dirPhpSls . DIRECTORY_SEPARATOR . 'deploy';
-        $this->fileConfigTesting = $this->dirCwd . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'testing.php';
+        $this->fileConfigTesting = $this->dirConfig . DIRECTORY_SEPARATOR . 'testing.php';
         $this->fileEnv = $this->dirCwd . DIRECTORY_SEPARATOR . 'env.php';
         $this->fileMain = $this->dirCwd . DIRECTORY_SEPARATOR . 'main.php';
 

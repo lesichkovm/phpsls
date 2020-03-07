@@ -30,11 +30,12 @@ class Helper
         require_once($roboFilePath);
 
         $robo = new \PHPServerless\RoboFile;
-        
+
         $robo->dirCwd = Helper::dirFs();
         $robo->dirConfig = Helper::dirFs().'/config';
         $robo->dirPhpSls = Helper::dirFs().'/.phpsls';
         $robo->dirPhpSlsDeploy = $robo->dirPhpSls.'/deploy';
+        $robo->fileConfigTesting = $robo->dirConfig.'/testing.php';
         $robo->fileEnv = $robo->dirCwd.'/env.php';
         $robo->fileMain = $robo->dirCwd.'/main.php';
         
