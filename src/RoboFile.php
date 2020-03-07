@@ -176,7 +176,14 @@ class RoboFile extends \Robo\Tasks
         $composerJson['autoload']['files']=\array_values(\array_unique($autoloadFiles));
         $composerJson['autoload']['psr-4']['App\\']="app/";
         $composerJson['autoload']['psr-4']['Tests\\']="tests/";
-    
+        $composerJson['require']["dg/composer-cleaner"] = "v2.1";
+        $composerJson["extra"]["cleaner-ignore"]["phpunit/phpunit"]= true;
+        $composerJson["extra"]["cleaner-ignore"]["vlucas/valitron"]= true;
+        $composerJson["config"]["optimize-autoloader"] = true;
+        $composerJson["config"]["preferred-install"]= "dist";
+        $composerJson["config"]["sort-packages"]= true;
+        $composerJson["minimum-stability"]= "dev";
+        $composerJson["prefer-stable"]= true;
         file_put_contents($this->dirCwd.'/composer.json', \json_encode($composerJson,JSON_PRETTY_PRINT));
         
         // 8. Run composer (with dev)
