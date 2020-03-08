@@ -117,10 +117,11 @@ class RoboFile extends \Robo\Tasks
         if (\file_exists($this->dirCwd.'/composer.json') == false) {
             $composerJson = [
                 'require'=>[
-                    "dg/composer-cleaner" => "v2.1",        
+                    "dg/composer-cleaner" => "v2.1",
+                    "sinevia/php-library-serverless"=> "^1.7",     
                 ],
                 'require-dev'=>[
-                    "lesichkovm/phpsls" => "^1.0",
+                    "lesichkovm/phpsls" => "^1.5",
                     "phpunit/phpunit"=> "8.5.1",
                 ],
                 "config"=> [
@@ -153,6 +154,7 @@ class RoboFile extends \Robo\Tasks
         $composerJson['autoload']['psr-4']['App\\']="app/";
         $composerJson['autoload']['psr-4']['Tests\\']="tests/";
         $composerJson['require']["dg/composer-cleaner"] = "v2.1";
+        $composerJson['require']["sinevia/php-library-serverless"] = "^1.7";
         $composerJson["extra"]["cleaner-ignore"]["phpunit/phpunit"]= true;
         $composerJson["extra"]["cleaner-ignore"]["vlucas/valitron"]= true;
         $composerJson["config"]["optimize-autoloader"] = true;
