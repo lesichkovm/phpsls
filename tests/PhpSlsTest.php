@@ -25,7 +25,7 @@ class PhpSlsTest extends \PHPUnit\Framework\TestCase
     {
         $robo = Helper::roboPrepared();
 
-        $isSuccess = $robo->init("local", "", "none");
+        $isSuccess = $robo->init("local", "");
 
         $this->assertTrue($isSuccess);
         $this->assertTrue(is_dir($robo->dirConfig));
@@ -34,8 +34,20 @@ class PhpSlsTest extends \PHPUnit\Framework\TestCase
         $this->assertTrue(file_exists($robo->dirCwd.'/composer.json'));
     }
 
+    public function testSetupPhpUnit()
+    {
+        $robo = Helper::roboPrepared();
+
+        $robo->init("local", "");
+        $isSuccess = $robo->setup("phpunit");
+
+        $this->assertTrue(file_exists($robo->dirCwd.'/phpunit.xml'));
+        $this->assertTrue(is_dir($robo->dirCwd.'/tests'));
+        $this->assertTrue(file_exists($robo->dirCwd.'/tests/BaseTest.php'));
+    }
+
     public function tearDown(): void
     {
-        //Helper::dirFsDelete();
+        Helper::dirFsDelete();
     }
 }

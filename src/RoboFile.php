@@ -44,7 +44,7 @@ class RoboFile extends \Robo\Tasks
     /**
      * Initializes an environment
      */
-    public function init($environment = "", $functionName = "", $testSuite = "")
+    public function init($environment = "", $functionName = "")
     {
         /* 1. Environment */
         if ($environment == "") {
@@ -66,18 +66,7 @@ class RoboFile extends \Robo\Tasks
             }
         }
 
-        /* 3. Testing suite */
-        $testSuites = ['phpunit', 'testify', 'none'];
-
-        if ($testSuite == "") {
-            $testSuite = trim($this->ask('What testing suite do you want to initialize (select one of: ' . implode(',', $testSuites) . ')?'));
-        }
-
-        if (in_array($testSuite, $testSuites) == false) {
-            $this->say('Only "' . implode('", "', $testSuites) . '" are supported. FAILED');
-            return false;
-        }
-
+        /* 3. Create stucture */
         $this->say('1. Creating config directry, if missing ...');
 
         if (\is_dir($this->dirConfig) == false) {
@@ -100,19 +89,6 @@ class RoboFile extends \Robo\Tasks
             $this->say("Please check all is correct at: '" . $this->fileConfigEnvironment . "'");
         } else {
             $this->say("Configuration file for environment '" . $environment . "' already exists at " . $this->fileConfigEnvironment . ". SKIPPED");
-        }
-
-        $this->say('3. Creating config file for "testing" environment, if missing ...');
-
-        if (\file_exists($this->fileConfigTesting) == false) {
-            $stub = "config-testing.php";
-            $configFileContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . $stub);
-            $configFileContents = str_replace('{{ TESTING_FRAMEWORK }}', strtoupper($testSuite), $configFileContents);
-            file_put_contents($this->fileConfigTesting, $configFileContents);
-            $this->say("Configuration file for environment 'testing' created. SUCCESS");
-            $this->say("Please check all is correct at: '" . $this->fileConfigTesting . "'");
-        } else {
-            $this->say("Configuration file for environment 'testing' already exists at " . $this->fileConfigTesting . ". SKIPPED");
         }
 
         $this->say('4. Creating main file, if missing...');
@@ -611,6 +587,66 @@ class RoboFile extends \Robo\Tasks
             ->arg($domain)
             ->arg($this->dirPhpSls . DIRECTORY_SEPARATOR . 'index.php')
             ->run();
+    }
+
+    public function setup($feature) {
+        if ($feature == "phpunit"){
+            return $this->setupPhpUnit();
+            
+        }
+    }
+
+    private function setupPhpUnit(){
+        $this->say('1. Creating "phpunit.xml" file, if missing ...');
+        
+        $filePhpUnit = $this->dirCwd . DIRECTORY_SEPARATOR . 'phpunit.xml';
+
+        if (\file_exists($filePhpUnit) == false) {
+            $filePhpUnitContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'phpunit.xml');
+            file_put_contents($filePhpUnit, $filePhpUnitContents);
+            $this->say('File "'.$filePhpUnit.'" created. SUCCESS');
+        } else {
+            $this->say('File "'.$filePhpUnit.'" already exists. SKIPPED');
+        }
+
+        $this->say('2. Creating "tests" directory, if missing ...');
+        
+        $dirTests = $this->dirCwd . DIRECTORY_SEPARATOR . 'tests';
+        
+        if (\is_dir($dirTests) == false) {
+            \Sinevia\Native::directoryCreate($dirTests);
+            $this->say('Directory "'.$dirTests.'" created. SUCCESS');
+        } else {
+            $this->say('Directory "'.$dirTests.'" already exists. SKIPPED');
+        }
+
+        $this->say('2. Creating "BaseTest.php" file, if missing ...');
+        
+        $fileBaseTest = $this->dirCwd . DIRECTORY_SEPARATOR . 'tests'  . DIRECTORY_SEPARATOR . 'BaseTest.php';
+        
+        if (\file_exists($fileBaseTest) == false) {
+            $fileBaseTestContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'tests' . DIRECTORY_SEPARATOR . 'BaseTest.php');
+            file_put_contents($fileBaseTest, $fileBaseTestContents);
+            $this->say('File "'.$fileBaseTest.'" created. SUCCESS');
+        } else {
+            $this->say('File "'.$fileBaseTest.'" already exists. SKIPPED');
+        }
+
+
+        $this->say('3. Creating config file for "testing" environment, if missing ...');
+
+        if (\file_exists($this->fileConfigTesting) == false) {
+            $stub = "config-testing.php";
+            $configFileContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . $stub);
+            $configFileContents = str_replace('{{ TESTING_FRAMEWORK }}', "PHPUNIT", $configFileContents);
+            file_put_contents($this->fileConfigTesting, $configFileContents);
+            $this->say("Configuration file for environment 'testing' created. SUCCESS");
+            $this->say("Please check all is correct at: '" . $this->fileConfigTesting . "'");
+        } else {
+            $this->say("Configuration file for environment 'testing' already exists at " . $this->fileConfigTesting . ". SKIPPED");
+        }
+        
+        return true;
     }
 
     /**
