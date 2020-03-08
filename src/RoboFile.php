@@ -118,7 +118,7 @@ class RoboFile extends \Robo\Tasks
             $composerJson = [
                 'require'=>[
                     "dg/composer-cleaner" => "v2.1",
-                    "sinevia/php-library-serverless"=> "^1.7",     
+                    "sinevia/php-library-serverless"=> "^1.9",     
                 ],
                 'require-dev'=>[
                     "lesichkovm/phpsls" => "^1.5",
