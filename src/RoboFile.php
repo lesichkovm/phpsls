@@ -478,9 +478,9 @@ class RoboFile extends \Robo\Tasks
         require_once 'app/functions.php';
 
         $this->say('4. Running migrations ...');
-        $db = eloquent();
+        $db = function_exists('eloquent') ? eloquent()->getConnection()->getPdo() : db();
         \Sinevia\Migrate::setDirectoryMigration(\Sinevia\Registry::get('DIR_MIGRATIONS'));
-        \Sinevia\Migrate::setDatabase($db->getConnection()->getPdo());
+        \Sinevia\Migrate::setDatabase($db);
         \Sinevia\Migrate::$verbose = false;
         \Sinevia\Migrate::up();
 
