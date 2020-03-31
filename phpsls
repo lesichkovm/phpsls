@@ -48,7 +48,7 @@ $classLoader = require PHPSERVERLESS_COMPOSER_INSTALL;
 
 // Customization variables
 $appName = "PHPSLS";
-$appVersion = '0.6.0';
+$appVersion = '1.0.0';
 $commandClasses = [ \PHPServerless\RoboFile::class ];
 $selfUpdateRepository = 'lesichkovm/phpsls';
 $configurationFilename = 'phpsls.yml';

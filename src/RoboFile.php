@@ -2,27 +2,30 @@
 
 namespace PHPServerless;
 
-class RoboFile extends \Robo\Tasks {
+class RoboFile extends \Robo\Tasks
+{
 
-    private $dirCwd = null;
-    private $dirPhpSls = null;
-    private $dirConfig = null;
-    private $dirPhpSlsDeploy = null;
-    private $fileEnv = null;
-    private $fileConfigEnvironment = null;
-    private $fileConfigTesting = null;
-    private $fileMain = null;
+    public $dirCwd = null;
+    public $dirPhpSls = null;
+    public $dirConfig = null;
+    public $dirPhpSlsDeploy = null;
+    public $fileEnv = null;
+    public $fileConfigEnvironment = null;
+    public $fileConfigTesting = null;
+    public $fileMain = null;
 
-    function __construct() {
+    function __construct()
+    {
         $this->_prepare();
     }
 
-    private function _prepare() {
+    private function _prepare()
+    {
         $this->dirCwd = getcwd();
         $this->dirConfig = $this->dirCwd . DIRECTORY_SEPARATOR . 'config';
         $this->dirPhpSls = $this->dirCwd . DIRECTORY_SEPARATOR . '.phpsls';
         $this->dirPhpSlsDeploy = $this->dirPhpSls . DIRECTORY_SEPARATOR . 'deploy';
-        $this->fileConfigTesting = $this->dirCwd . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'testing.php';
+        $this->fileConfigTesting = $this->dirConfig . DIRECTORY_SEPARATOR . 'testing.php';
         $this->fileEnv = $this->dirCwd . DIRECTORY_SEPARATOR . 'env.php';
         $this->fileMain = $this->dirCwd . DIRECTORY_SEPARATOR . 'main.php';
 
@@ -38,14 +41,22 @@ class RoboFile extends \Robo\Tasks {
         }
     }
 
-    public function init() {
-        $environment = trim($this->ask('What environment do you want to initialize: local, staging, live?'));
+    /**
+     * Initializes an environment
+     */
+    public function init($environment = "", $functionName = "")
+    {
+        /* 1. Environment */
+        if ($environment == "") {
+            $environment = trim($this->ask('What environment do you want to initialize (i.e local, staging, live)?'));
+        }
 
         if ($environment == "") {
             $this->say("Environment cannot be empty. FAILED");
             return false;
         }
 
+        /* 2. Function name */
         if ($environment != "local") {
             $functionName = trim($this->ask('What would you like your function to be called?'));
 
@@ -55,6 +66,7 @@ class RoboFile extends \Robo\Tasks {
             }
         }
 
+        /* 3. Create stucture */
         $this->say('1. Creating config directry, if missing ...');
 
         if (\is_dir($this->dirConfig) == false) {
@@ -79,18 +91,6 @@ class RoboFile extends \Robo\Tasks {
             $this->say("Configuration file for environment '" . $environment . "' already exists at " . $this->fileConfigEnvironment . ". SKIPPED");
         }
 
-        $this->say('3. Creating config file for "testing" environment, if missing ...');
-
-        if (\file_exists($this->fileConfigTesting) == false) {
-            $stub = "config-testing.php";
-            $configFileContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . $stub);
-            file_put_contents($this->fileConfigTesting, $configFileContents);
-            $this->say("Configuration file for environment 'testing' created. SUCCESS");
-            $this->say("Please check all is correct at: '" . $this->fileConfigTesting . "'");
-        } else {
-            $this->say("Configuration file for environment 'testing' already exists at " . $this->fileConfigTesting . ". SKIPPED");
-        }
-
         $this->say('4. Creating main file, if missing...');
 
         if (\file_exists($this->fileMain) == false) {
@@ -112,9 +112,82 @@ class RoboFile extends \Robo\Tasks {
         } else {
             $this->say("Env file already exists at " . $this->fileEnv . ". SKIPPED");
         }
+
+        $this->say('6. Creating composer.json file, if missing ...');
+        if (\file_exists($this->dirCwd.'/composer.json') == false) {
+            $composerJson = [
+                'require'=>[
+                    "dg/composer-cleaner" => "v2.1",
+                    "sinevia/php-library-serverless"=> "^1.9",     
+                ],
+                'require-dev'=>[
+                    "lesichkovm/phpsls" => "^1.5",
+                    "phpunit/phpunit"=> "8.5.1",
+                ],
+                "config"=> [
+                    "optimize-autoloader"=> true,
+                    "preferred-install"=> "dist",
+                    "sort-packages"=> true,
+                ],
+                "minimum-stability"=> "dev",
+                "prefer-stable"=> true,
+                "extra"=> [
+                    "cleaner-ignore"=> [
+                        "phpunit/phpunit"=> true,
+                        "vlucas/valitron"=> true,
+                    ]
+                ]
+            ];
+            file_put_contents($this->dirCwd.'/composer.json', \json_encode($composerJson,JSON_PRETTY_PRINT));
+        }
+
+        $this->say('7. Updating composer.json file ...');
+        $composerJson = json_decode(file_get_contents($this->dirCwd.'/composer.json'), true);
+        if($composerJson==null){
+            $this->say("File \"composer.json\" missing. FAILED");
+            return false;
+        }
+        $autoloadFiles = $composerJson['autoload']['files']??[];
+        \array_unshift($autoloadFiles, "main.php"); // Second
+        \array_unshift($autoloadFiles, "env.php");  // First
+        $composerJson['autoload']['files']=\array_values(\array_unique($autoloadFiles));
+        $composerJson['autoload']['psr-4']['App\\']="app/";
+        $composerJson['autoload']['psr-4']['Tests\\']="tests/";
+        $composerJson['require']["dg/composer-cleaner"] = "v2.1";
+        $composerJson['require']["sinevia/php-library-serverless"] = "^1.7";
+        $composerJson["extra"]["cleaner-ignore"]["phpunit/phpunit"]= true;
+        $composerJson["extra"]["cleaner-ignore"]["vlucas/valitron"]= true;
+        $composerJson["config"]["optimize-autoloader"] = true;
+        $composerJson["config"]["preferred-install"]= "dist";
+        $composerJson["config"]["sort-packages"]= true;
+        $composerJson["minimum-stability"]= "dev";
+        $composerJson["prefer-stable"]= true;
+        file_put_contents($this->dirCwd.'/composer.json', \json_encode($composerJson,JSON_PRETTY_PRINT));
+        
+        // 8. Run composer (with dev)
+        // $this->say('8. Updating composer dependencies...');
+
+        // $isSuccessful = $this->taskExec('composer')
+        //     ->arg('update')
+        //     ->option('prefer-dist')
+        //     ->option('optimize-autoloader')
+        //     ->dir($this->dirCwd)
+        //     ->run()->wasSuccessful();
+        // if ($isSuccessful == false) {
+        //     return $this->say('Failed.');
+        // }
+
+        $this->say('8. Please run "composer update" to update dependencies');
+
+        return true;
     }
 
-    public function deploy($environment) {
+    /**
+     * Deploys an environment to the serverless action
+     * specified in its configuration file
+     */
+    public function deploy($environment)
+    {
         // 1. Does the configuration file exists? No => Exit
         $this->say('1. Checking configuration...');
 
@@ -129,27 +202,41 @@ class RoboFile extends \Robo\Tasks {
         }
 
         // 2. Load the configuration file for the enviroment
+        $this->say('2. Loading configuratiion file for environment "' . $environment . '" ...');
         \Sinevia\Registry::set("ENVIRONMENT", $environment);
         $this->_loadEnvConf(\Sinevia\Registry::get("ENVIRONMENT"));
 
         // 3. Check if serverless function name is set
+        $this->say('3. Checking if serverless function name set for environment "' . $environment . '" ...');
         $functionName = \Sinevia\Registry::get('SERVERLESS_FUNCTION_NAME', '');
 
         if ($functionName == "") {
             return $this->say('SERVERLESS_FUNCTION_NAME not set for environment "' . $environment . '"');
+        } else {
+            $this->say('SERVERLESS_FUNCTION_NAME is set as "' . $functionName . '"');
         }
 
         if ($functionName == "{YOUR_LIVE_SERVERLESS_FUNCTION_NAME}") {
-            return $this->say('SERVERLESS_FUNCTION_NAME not set for environment "' . $environment . '"');
+            return $this->say('SERVERLESS_FUNCTION_NAME not correct for environment "' . $environment . '"');
         }
+
+        // 3. Check if serverless provider is set
+        $this->say('3. Checking if serverless provider is supported for "' . $environment . '" ...');
+        $serverlessProvider = strtolower(\Sinevia\Registry::get('SERVERLESS_PROVIDER', 'ibm'));
+        $supportedProviders = ['aws', 'ibm'];
+        if (in_array($serverlessProvider, $supportedProviders) == false) {
+            return $this->say('SERVERLESS_PROVIDER not supported "' . $serverlessProvider . '"');
+        }
+
+        $this->say('SERVERLESS_PROVIDER is set as "' . $serverlessProvider . '"');
 
         // 4. Create deployment directory
         $this->say('4. Creating deployment directory...');
         if (file_exists($this->dirPhpSlsDeploy) == false) {
             $isSuccessful = $this->taskExec('mkdir')
-                    ->arg($this->dirPhpSlsDeploy)
-                    ->run()
-                    ->wasSuccessful();
+                ->arg($this->dirPhpSlsDeploy)
+                ->run()
+                ->wasSuccessful();
             if ($isSuccessful == false) {
                 return $this->say('Failed.');
             }
@@ -162,47 +249,53 @@ class RoboFile extends \Robo\Tasks {
         $serverlessFileContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'serverless.php');
         file_put_contents($this->dirPhpSlsDeploy . DIRECTORY_SEPARATOR . 'serverless.php', $serverlessFileContents);
 
-        $serverlessFileContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'serverless.yaml');
+        $serverlessConfigFile = 'serverless-ibm.yaml';
+        if ($serverlessProvider == 'aws') {
+            $serverlessConfigFile = 'serverless-aws.yaml';
+        }
+        $serverlessFileContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . $serverlessConfigFile);
         $serverlessFileContents = str_replace('{YOURFUNCTION}', $functionName, $serverlessFileContents);
         file_put_contents($this->dirPhpSlsDeploy . DIRECTORY_SEPARATOR . 'serverless.yaml', $serverlessFileContents);
 
         // 6. Copy project files
         $this->say('6. Copying files...');
         $this->taskCopyDir([getcwd() => $this->dirPhpSlsDeploy])
-                ->exclude([
-                    $this->dirPhpSls,
-                    $this->dirCwd . DIRECTORY_SEPARATOR . 'composer.lock',
-                    $this->dirCwd . DIRECTORY_SEPARATOR . 'nbproject',
-                    $this->dirCwd . DIRECTORY_SEPARATOR . 'node_modules',
-                    $this->dirCwd . DIRECTORY_SEPARATOR . 'vendor',
-                ])
-                // ->option('function', $functionName) // Not working since Serverless v.1.5.1
-                ->run();
+            ->exclude([
+                $this->dirPhpSls,
+                $this->dirCwd . DIRECTORY_SEPARATOR . 'composer.lock',
+                $this->dirCwd . DIRECTORY_SEPARATOR . 'nbproject',
+                $this->dirCwd . DIRECTORY_SEPARATOR . 'node_modules',
+                $this->dirCwd . DIRECTORY_SEPARATOR . 'vendor',
+            ])
+            // ->option('function', $functionName) // Not working since Serverless v.1.5.1
+            ->run();
 
-        // 4. Run tests
-        $this->say('2. Running tests...');
-        //$isSuccessful = $this->test();
-        //if ($isSuccessful == false) {
-        //    return $this->say('Failed');
-        //}
-        // 5. Run composer (no-dev)
-        $this->say('3. Updating composer dependencies...');
+        // 7. Run tests
+        $this->say('7. Running tests...');
+        $isSuccessful = $this->test();
+        if ($isSuccessful == false) {
+            return $this->say('Failed');
+        }
+
+        // 8. Run composer (no-dev)
+        $this->say('8. Updating composer dependencies...');
         $isSuccessful = $this->taskExec('composer')
-                        ->arg('update')
-                        ->option('prefer-dist')
-                        ->option('optimize-autoloader')
-                        ->dir($this->dirPhpSlsDeploy)
-                        ->run()->wasSuccessful();
+            ->arg('update')
+            ->option('no-dev')
+            ->option('prefer-dist')
+            ->option('optimize-autoloader')
+            ->dir($this->dirPhpSlsDeploy)
+            ->run()->wasSuccessful();
         if ($isSuccessful == false) {
             return $this->say('Failed.');
         }
 
-        // 6. Prepare for deployment
-        $this->say('4. Prepare for deployment...');
+        // 9. Prepare for deployment
+        $this->say('9. Prepare for deployment...');
         $this->taskReplaceInFile($this->dirPhpSlsDeploy . DIRECTORY_SEPARATOR . 'env.php')
-                ->from('"ENVIRONMENT", isLocal() ? "local" : "unrecognized"')
-                ->to('"ENVIRONMENT", "' . $environment . '"')
-                ->run();
+            ->from('$environment = "local"; // !!! Do not change will be modified automatically during deployment')
+            ->to('$environment = "' . $environment . '"; // !!! Do not change will be modified automatically during deployment')
+            ->run();
 
         $packageFileContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'package.json');
         file_put_contents($this->dirPhpSlsDeploy . DIRECTORY_SEPARATOR . 'package.json', $packageFileContents);
@@ -210,40 +303,40 @@ class RoboFile extends \Robo\Tasks {
         try {
             $this->say('5. NPM Install Packages...');
             $this->taskExec('npm')->arg('install')
-                    // ->option('function', $functionName) // Not working since Serverless v.1.5.1
-                    ->dir($this->dirPhpSlsDeploy)
-                    ->run();
+                // ->option('function', $functionName) // Not working since Serverless v.1.5.1
+                ->dir($this->dirPhpSlsDeploy)
+                ->run();
         } catch (\Exception $e) {
             $this->say('There was an exception: ' . $e->getMessage());
         }
 
-        // 7. Deploy
+        // 10. Deploy
         try {
-            $this->say('5. Deploying...');
+            $this->say('10. Deploying...');
             $this->taskExec('sls')
-                    ->arg('deploy')
-                    // ->option('function', $functionName) // Not working since Serverless v.1.5.1
-                    ->dir($this->dirPhpSlsDeploy)
-                    ->run();
+                ->arg('deploy')
+                // ->option('function', $functionName) // Not working since Serverless v.1.5.1
+                ->dir($this->dirPhpSlsDeploy)
+                ->run();
         } catch (\Exception $e) {
             $this->say('There was an exception: ' . $e->getMessage());
             return;
         }
 
-        // 8. Cleanup after deployment
-        $this->say('6. Cleaning up...');
+        // 11. Cleanup after deployment
+        $this->say('11. Cleaning up...');
 
-        // 8. Cleanup after deployment
-        $this->say('7. Opening URL...');
-        $urlBase = \Sinevia\Registry::get('URL_BASE', '');
-        $this->taskOpenBrowser($urlBase)->run();
+        // 12. Cleanup after deployment
+        $this->say('12. Opening URL...');
+        $this->open($environment);
     }
 
     /**
      * Runs the tests
      * @return boolean true if tests successful, false otherwise
      */
-    public function test() {
+    public function test()
+    {
         /* START: Reload enviroment */
         \Sinevia\Registry::set("ENVIRONMENT", 'testing');
         $this->_loadEnvConf(\Sinevia\Registry::get("ENVIRONMENT"));
@@ -271,22 +364,23 @@ class RoboFile extends \Robo\Tasks {
      * @url https://phpunit.de/index.html
      * @return boolean true if tests successful, false otherwise
      */
-    function testWithPhpUnit() {
+    private function testWithPhpUnit()
+    {
         $this->say('Running PHPUnit tests...');
 
         $isSuccessful = $this->taskExec('composer')
-                ->arg('update')
-                ->option('prefer-dist')
-                ->option('optimize-autoloader')
-                ->run()
-                ->wasSuccessful();
+            ->arg('update')
+            ->option('prefer-dist')
+            ->option('optimize-autoloader')
+            ->run()
+            ->wasSuccessful();
 
         // 1. Run composer
         $isSuccessful = $this->taskExec('composer')
-                        ->arg('update')
-                        ->option('prefer-dist')
-                        ->option('optimize-autoloader')
-                        ->run()->wasSuccessful();
+            ->arg('update')
+            ->option('prefer-dist')
+            ->option('optimize-autoloader')
+            ->run()->wasSuccessful();
 
         if ($isSuccessful == false) {
             return false;
@@ -294,10 +388,10 @@ class RoboFile extends \Robo\Tasks {
 
         // 2. Run tests
         $isSuccessful = $this->taskExec('phpunit')
-                ->dir('vendor/bin')
-                ->option('configuration', '../../phpunit.xml')
-                ->run()
-                ->wasSuccessful();
+            ->dir('vendor/bin')
+            ->option('configuration', '../../phpunit.xml')
+            ->run()
+            ->wasSuccessful();
 
         if ($isSuccessful == false) {
             return false;
@@ -311,7 +405,8 @@ class RoboFile extends \Robo\Tasks {
      * @url https://github.com/BafS/Testify.php
      * @return boolean true if tests successful, false otherwise
      */
-    private function testWithTestify() {
+    private function testWithTestify()
+    {
         if (file_exists(__DIR__ . '/tests/test.php') == false) {
             $this->say('Tests Skipped. Not test file at: ' . __DIR__ . '/tests/test.php');
             return true;
@@ -320,17 +415,17 @@ class RoboFile extends \Robo\Tasks {
         $this->say('Running tests...');
 
         $isSuccessful = $this->taskExec('composer')
-                ->arg('update')
-                ->option('prefer-dist')
-                ->option('optimize-autoloader')
-                ->run()
-                ->wasSuccessful();
+            ->arg('update')
+            ->option('prefer-dist')
+            ->option('optimize-autoloader')
+            ->run()
+            ->wasSuccessful();
 
         $result = $this->taskExec('php')
-                ->dir('tests')
-                ->arg('test.php')
-                ->printOutput(true)
-                ->run();
+            ->dir('tests')
+            ->arg('test.php')
+            ->printOutput(true)
+            ->run();
 
         $output = trim($result->getMessage());
 
@@ -357,7 +452,8 @@ class RoboFile extends \Robo\Tasks {
         return true;
     }
 
-    public function migrate($environment) {
+    public function migrate($environment)
+    {
         $this->say('============= START: Migrations ============');
 
         // 1. Does the configuration file exists? No => Exit
@@ -382,9 +478,9 @@ class RoboFile extends \Robo\Tasks {
         require_once 'app/functions.php';
 
         $this->say('4. Running migrations ...');
-        $db = eloquent();
+        $db = function_exists('eloquent') ? eloquent()->getConnection()->getPdo() : db();
         \Sinevia\Migrate::setDirectoryMigration(\Sinevia\Registry::get('DIR_MIGRATIONS'));
-        \Sinevia\Migrate::setDatabase($db->getConnection()->getPdo());
+        \Sinevia\Migrate::setDatabase($db);
         \Sinevia\Migrate::$verbose = false;
         \Sinevia\Migrate::up();
 
@@ -393,7 +489,8 @@ class RoboFile extends \Robo\Tasks {
         $this->say('============== END: Migrations =============');
     }
 
-    public function open($environment) {
+    public function open($environment)
+    {
         /* START: Reload enviroment */
         \Sinevia\Registry::set("ENVIRONMENT", $environment);
         $this->_loadEnvConf(\Sinevia\Registry::get("ENVIRONMENT"));
@@ -406,18 +503,19 @@ class RoboFile extends \Robo\Tasks {
 
         if (self::_isWindows()) {
             $isSuccessful = $this->taskExec('start')
-                    ->arg('firefox')
-                    ->arg($url)
-                    ->run();
+                ->arg('firefox')
+                ->arg($url)
+                ->run();
         }
         if (self::_isWindows() == false) {
             $isSuccessful = $this->taskExec('firefox')
-                    ->arg($url)
-                    ->run();
+                ->arg($url)
+                ->run();
         }
     }
 
-    public function seed($environment, $className) {
+    public function seed($environment, $className)
+    {
         $this->say('============= START: Seed ============');
 
         // 1. Does the configuration file exists? No => Exit
@@ -448,15 +546,15 @@ class RoboFile extends \Robo\Tasks {
         if (class_exists($className) == false) {
             return $this->say('Class "' . $className . '" DOES NOT EXIST at location ' . $classPath . ' . FAILED');
         }
-        
+
         $seedInstance = new $className;
-        
-        if(method_exists($seedInstance, 'run')==false){
+
+        if (method_exists($seedInstance, 'run') == false) {
             return $this->say('Class "' . $className . '" DOES NOT HAVE a "run" method . FAILED');
         }
-        
+
         $seedInstance->run();
-        
+
         $this->say('============== END: Seed =============');
     }
 
@@ -464,7 +562,8 @@ class RoboFile extends \Robo\Tasks {
      * Serves the application locally using the PHP built-in server
      * @return void
      */
-    public function serve() {
+    public function serve()
+    {
         /* START: Reload enviroment */
         \Sinevia\Registry::set("ENVIRONMENT", 'local');
         $this->_loadEnvConf(\Sinevia\Registry::get("ENVIRONMENT"));
@@ -484,18 +583,79 @@ class RoboFile extends \Robo\Tasks {
         file_put_contents($this->dirPhpSls . DIRECTORY_SEPARATOR . 'index.php', $serverFileContents);
 
         $isSuccessful = $this
-                ->taskOpenBrowser($url)
-                ->taskExec('php')
-                ->arg('-S')
-                ->arg($domain)
-                ->arg($this->dirPhpSls . DIRECTORY_SEPARATOR . 'index.php')
-                ->run();
+            ->taskOpenBrowser($url)
+            ->taskExec('php')
+            ->arg('-S')
+            ->arg($domain)
+            ->arg($this->dirPhpSls . DIRECTORY_SEPARATOR . 'index.php')
+            ->run();
+    }
+
+    public function setup($feature) {
+        if ($feature == "phpunit"){
+            return $this->setupPhpUnit();
+            
+        }
+    }
+
+    private function setupPhpUnit(){
+        $this->say('1. Creating "phpunit.xml" file, if missing ...');
+        
+        $filePhpUnit = $this->dirCwd . DIRECTORY_SEPARATOR . 'phpunit.xml';
+
+        if (\file_exists($filePhpUnit) == false) {
+            $filePhpUnitContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'phpunit.xml');
+            file_put_contents($filePhpUnit, $filePhpUnitContents);
+            $this->say('File "'.$filePhpUnit.'" created. SUCCESS');
+        } else {
+            $this->say('File "'.$filePhpUnit.'" already exists. SKIPPED');
+        }
+
+        $this->say('2. Creating "tests" directory, if missing ...');
+        
+        $dirTests = $this->dirCwd . DIRECTORY_SEPARATOR . 'tests';
+        
+        if (\is_dir($dirTests) == false) {
+            \Sinevia\Native::directoryCreate($dirTests);
+            $this->say('Directory "'.$dirTests.'" created. SUCCESS');
+        } else {
+            $this->say('Directory "'.$dirTests.'" already exists. SKIPPED');
+        }
+
+        $this->say('2. Creating "BaseTest.php" file, if missing ...');
+        
+        $fileBaseTest = $this->dirCwd . DIRECTORY_SEPARATOR . 'tests'  . DIRECTORY_SEPARATOR . 'BaseTest.php';
+        
+        if (\file_exists($fileBaseTest) == false) {
+            $fileBaseTestContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'tests' . DIRECTORY_SEPARATOR . 'BaseTest.php');
+            file_put_contents($fileBaseTest, $fileBaseTestContents);
+            $this->say('File "'.$fileBaseTest.'" created. SUCCESS');
+        } else {
+            $this->say('File "'.$fileBaseTest.'" already exists. SKIPPED');
+        }
+
+
+        $this->say('3. Creating config file for "testing" environment, if missing ...');
+
+        if (\file_exists($this->fileConfigTesting) == false) {
+            $stub = "config-testing.php";
+            $configFileContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . $stub);
+            $configFileContents = str_replace('{{ TESTING_FRAMEWORK }}', "PHPUNIT", $configFileContents);
+            file_put_contents($this->fileConfigTesting, $configFileContents);
+            $this->say("Configuration file for environment 'testing' created. SUCCESS");
+            $this->say("Please check all is correct at: '" . $this->fileConfigTesting . "'");
+        } else {
+            $this->say("Configuration file for environment 'testing' already exists at " . $this->fileConfigTesting . ". SKIPPED");
+        }
+        
+        return true;
     }
 
     /**
      * Retrieves the logs from serverless
      */
-    public function logs($environment) {
+    public function logs($environment)
+    {
         /* START: Reload enviroment */
         \Sinevia\Registry::set("ENVIRONMENT", $environment);
         $this->_loadEnvConf(\Sinevia\Registry::get("ENVIRONMENT"));
@@ -507,9 +667,10 @@ class RoboFile extends \Robo\Tasks {
         }
 
         $this->taskExec('sls')
-                ->arg('logs')
-                ->option('function', $functionName)
-                ->run();
+            ->arg('logs')
+            ->option('function', $functionName)
+            ->dir($this->dirPhpSlsDeploy)
+            ->run();
     }
 
     /**
@@ -517,7 +678,8 @@ class RoboFile extends \Robo\Tasks {
      * @param string $environment
      * @return void
      */
-    private function _loadEnvConf($environment) {
+    private function _loadEnvConf($environment)
+    {
         $envConfigFile = $this->dirConfig . DIRECTORY_SEPARATOR . $environment . '.php';
 
         if (file_exists($envConfigFile)) {
@@ -535,7 +697,8 @@ class RoboFile extends \Robo\Tasks {
      * Checks whether the script runs on localhost
      * @return boolean
      */
-    private static function _isLocal() {
+    private static function _isLocal()
+    {
         if (isset($_SERVER['REMOTE_ADDR']) == false) {
             return false;
         }
@@ -552,11 +715,11 @@ class RoboFile extends \Robo\Tasks {
         false;
     }
 
-    private static function _isWindows() {
+    private static function _isWindows()
+    {
         if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
             return true;
         }
         return false;
     }
-
 }
