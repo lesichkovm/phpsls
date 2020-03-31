@@ -9,6 +9,7 @@ class RoboFile extends \Robo\Tasks
     public $dirPhpSls = null;
     public $dirConfig = null;
     public $dirPhpSlsDeploy = null;
+    public $dirTests = null;
     public $fileEnv = null;
     public $fileConfigEnvironment = null;
     public $fileConfigTesting = null;
@@ -25,6 +26,8 @@ class RoboFile extends \Robo\Tasks
         $this->dirConfig = $this->dirCwd . DIRECTORY_SEPARATOR . 'config';
         $this->dirPhpSls = $this->dirCwd . DIRECTORY_SEPARATOR . '.phpsls';
         $this->dirPhpSlsDeploy = $this->dirPhpSls . DIRECTORY_SEPARATOR . 'deploy';
+        $this->dirTests = $this->dirCwd . DIRECTORY_SEPARATOR . 'tests';
+        
         $this->fileConfigTesting = $this->dirConfig . DIRECTORY_SEPARATOR . 'testing.php';
         $this->fileEnv = $this->dirCwd . DIRECTORY_SEPARATOR . 'env.php';
         $this->fileMain = $this->dirCwd . DIRECTORY_SEPARATOR . 'main.php';
@@ -407,8 +410,8 @@ class RoboFile extends \Robo\Tasks
      */
     private function testWithTestify()
     {
-        if (file_exists(__DIR__ . '/tests/test.php') == false) {
-            $this->say('Tests Skipped. Not test file at: ' . __DIR__ . '/tests/test.php');
+        if (file_exists($this->dirTests . '/test.php') == false) {
+            $this->say('Tests Skipped. Not test file at: ' . $this->dirTests. '/test.php');
             return true;
         }
 
@@ -422,7 +425,7 @@ class RoboFile extends \Robo\Tasks
             ->wasSuccessful();
 
         $result = $this->taskExec('php')
-            ->dir('tests')
+            ->dir($this->dirTests)
             ->arg('test.php')
             ->printOutput(true)
             ->run();
@@ -435,7 +438,7 @@ class RoboFile extends \Robo\Tasks
         }
 
         if ($output == "") {
-            $output = shell_exec('php tests/test.php'); // Re-test, as no output on Linux Mint
+            $output = shell_exec('php "'.$this->dirTests.'/test.php"'); // Re-test, as no output on Linux Mint
             if (trim($output == "")) {
                 $this->say('Tests Failed. No output');
                 return false;
