@@ -345,7 +345,7 @@ class RoboFile extends \Robo\Tasks
         $this->_loadEnvConf(\Sinevia\Registry::get("ENVIRONMENT"));
         /* END: Reload enviroment */
 
-        $testingFramework = \Sinevia\Registry::get('TESTING_FRAMEWORK', ''); // Options: TESTIFY, PHPUNIT, NONE
+        $testingFramework = \Sinevia\Registry::get('TESTING_FRAMEWORK', 'PHPUNIT'); // Options: TESTIFY, PHPUNIT, NONE
 
         if ($testingFramework == "") {
             return $this->say('TESTING_FRAMEWORK not set in file: ' . $this->dirConfig . DIRECTORY_SEPARATOR . 'testing.php');
@@ -597,7 +597,6 @@ class RoboFile extends \Robo\Tasks
     public function setup($feature) {
         if ($feature == "phpunit"){
             return $this->setupPhpUnit();
-            
         }
     }
 
