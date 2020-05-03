@@ -1,5 +1,6 @@
 {
     "name": "lesichkovm/phpsls",
+    "description": "Easily manage working with serverless",
     "license": "proprietary",
     "authors": [
         {
