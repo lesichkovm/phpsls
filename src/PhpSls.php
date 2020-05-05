@@ -662,7 +662,7 @@ class PhpSls {
         $dirTests = $this->dirCwd . DIRECTORY_SEPARATOR . 'tests';
 
         if (\is_dir($dirTests) == false) {
-            \Sinevia\Native::directoryCreate($dirTests);
+            \PHPServerless\Native::directoryCreate($dirTests);
             $this->say('Directory "' . $dirTests . '" created. SUCCESS');
         } else {
             $this->say('Directory "' . $dirTests . '" already exists. SKIPPED');
