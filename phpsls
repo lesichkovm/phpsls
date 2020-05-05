@@ -49,18 +49,23 @@ $classLoader = require PHPSERVERLESS_COMPOSER_INSTALL;
 // Customization variables
 $appName = "PHPSLS";
 $appVersion = '1.0.0';
-$commandClasses = [ \PHPServerless\RoboFile::class ];
+//$commandClasses = [ \PHPServerless\PhpSls::class ];
 $selfUpdateRepository = 'lesichkovm/phpsls';
 $configurationFilename = 'phpsls.yml';
 
 // Define our Runner, and pass it the command classes we provide.
-$runner = new \Robo\Runner($commandClasses);
-$runner
-  ->setSelfUpdateRepository($selfUpdateRepository)
-  ->setConfigurationFilename($configurationFilename)
-  ->setClassLoader($classLoader);
+//$runner = new \Robo\Runner($commandClasses);
+//$runner
+//  ->setSelfUpdateRepository($selfUpdateRepository)
+//  ->setConfigurationFilename($configurationFilename)
+//  ->setClassLoader($classLoader);
 
 // Execute the command and return the result.
-$output = new \Symfony\Component\Console\Output\ConsoleOutput();
-$statusCode = $runner->execute($argv, $appName, $appVersion, $output);
+//$output = new \Symfony\Component\Console\Output\ConsoleOutput();
+//$statusCode = $runner->execute($argv, $appName, $appVersion, $output);
+
+$arguments = \PHPServerless\parseArgs();
+$phpSls = new \PHPServerless\PhpSls();
+$statusCode = $phpSls->run($arguments['arguments'], $arguments['parameters']);
+
 exit($statusCode);
