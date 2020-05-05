@@ -10,35 +10,35 @@ class Helper
     public static function dirFsCreate()
     {
         if (is_dir(self::dirFs()) == false) {
-            \Sinevia\Native::directoryCreate(self::dirFs());
+            \PHPServerless\Native::directoryCreate(self::dirFs());
         }
         return true;
     }
 
     public static function dirFsDelete()
     {
-        \Sinevia\Native::directoryDeleteRecursive(self::dirFs());
+        \PHPServerless\Native::directoryDeleteRecursive(self::dirFs());
     }
 
     /**
      * Imports and returns RoboFile ready for testing
      * @return \PHPServerless\RoboFile
      */
-    public static function roboPrepared()
+    public static function phpslsPrepared()
     {
-        $roboFilePath = dirname(__DIR__) . '/src/RoboFile.php';
+        $roboFilePath = dirname(__DIR__) . '/src/PhpSls.php';
         require_once($roboFilePath);
 
-        $robo = new \PHPServerless\RoboFile;
+        $phpsls = new \PHPServerless\PhpSls;
 
-        $robo->dirCwd = Helper::dirFs();
-        $robo->dirConfig = Helper::dirFs().'/config';
-        $robo->dirPhpSls = Helper::dirFs().'/.phpsls';
-        $robo->dirPhpSlsDeploy = $robo->dirPhpSls.'/deploy';
-        $robo->fileConfigTesting = $robo->dirConfig.'/testing.php';
-        $robo->fileEnv = $robo->dirCwd.'/env.php';
-        $robo->fileMain = $robo->dirCwd.'/main.php';
+        $phpsls->dirCwd = Helper::dirFs();
+        $phpsls->dirConfig = Helper::dirFs().'/config';
+        $phpsls->dirPhpSls = Helper::dirFs().'/.phpsls';
+        $phpsls->dirPhpSlsDeploy = $phpsls->dirPhpSls.'/deploy';
+        $phpsls->fileConfigTesting = $phpsls->dirConfig.'/testing.php';
+        $phpsls->fileEnv = $phpsls->dirCwd.'/env.php';
+        $phpsls->fileMain = $phpsls->dirCwd.'/main.php';
         
-        return $robo;
+        return $phpsls;
     }
 }

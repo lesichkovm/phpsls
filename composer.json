@@ -20,13 +20,19 @@
         "phpsls"
     ],
     "require": {
-        "consolidation/robo": "^2.0",
-        "sinevia/php-library-registry": "^2.9",
-        "sinevia/php-library-serverless": "^1.7",
-        "sinevia/php-library-native": "^0.1.0"
+        "sinevia/php-library-serverless": "^1.9",
+        "clue/phar-composer": "^1.1"
     },
     "require-dev": {
         "phpunit/phpunit": "^8.5",
-        "clue/phar-composer": "^1.1"
+        "sinevia/php-library-registry": "^2.9"
+    },
+    "scripts": {
+        "build": [
+            "composer update --no-dev; phar-composer build ."
+        ],
+        "test": [
+            "phpunit tests"
+        ]
     }
 }

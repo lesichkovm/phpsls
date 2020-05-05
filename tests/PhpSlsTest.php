@@ -17,33 +17,33 @@ class PhpSlsTest extends \PHPUnit\Framework\TestCase
     public function testRoboFileExists()
     {
 
-        $roboFilePath = dirname(__DIR__) . '/src/RoboFile.php';
-        $this->assertTrue(file_exists($roboFilePath));
+        $phpslsFilePath = dirname(__DIR__) . '/src/PhpSls.php';
+        $this->assertTrue(file_exists($phpslsFilePath));
     }
 
     public function testInit()
     {
-        $robo = Helper::roboPrepared();
+        $phpsls = Helper::phpslsPrepared();
 
-        $isSuccess = $robo->init("local", "");
+        $isSuccess = $phpsls->init("local", "");
 
         $this->assertTrue($isSuccess);
-        $this->assertTrue(is_dir($robo->dirConfig));
-        $this->assertTrue(file_exists($robo->fileEnv));
-        $this->assertTrue(file_exists($robo->fileMain));
-        $this->assertTrue(file_exists($robo->dirCwd.'/composer.json'));
+        $this->assertTrue(is_dir($phpsls->dirConfig));
+        $this->assertTrue(file_exists($phpsls->fileEnv));
+        $this->assertTrue(file_exists($phpsls->fileMain));
+        $this->assertTrue(file_exists($phpsls->dirCwd.'/composer.json'));
     }
 
     public function testSetupPhpUnit()
     {
-        $robo = Helper::roboPrepared();
+        $phpsls = Helper::phpslsPrepared();
 
-        $robo->init("local", "");
-        $isSuccess = $robo->setup("phpunit");
+        $phpsls->init("local", "");
+        $isSuccess = $phpsls->setup("phpunit");
 
-        $this->assertTrue(file_exists($robo->dirCwd.'/phpunit.xml'));
-        $this->assertTrue(is_dir($robo->dirCwd.'/tests'));
-        $this->assertTrue(file_exists($robo->dirCwd.'/tests/BaseTest.php'));
+        $this->assertTrue(file_exists($phpsls->dirCwd.'/phpunit.xml'));
+        $this->assertTrue(is_dir($phpsls->dirCwd.'/tests'));
+        $this->assertTrue(file_exists($phpsls->dirCwd.'/tests/BaseTest.php'));
     }
 
     public function tearDown(): void
