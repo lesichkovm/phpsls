@@ -20,7 +20,7 @@ class PhpSls {
 
     function run($arguments, $parameters) {
         $method = array_shift($arguments);
-        
+
         if ($method == null) {
             $method = "help";
         }
@@ -29,7 +29,7 @@ class PhpSls {
             return $this->{$method}($arguments, $parameters);
         }
 
-        echo "No such argument: ". $method;
+        echo "No such argument: " . $method;
 
         return $this->help();
     }
@@ -37,31 +37,31 @@ class PhpSls {
     public function help() {
         $cmds = [
             [
-                "name"=>"deploy {env}",
-                "description"=>"Deploys an environment (i.e. staging, live)",
+                "name" => "deploy {env}",
+                "description" => "Deploys an environment (i.e. staging, live)",
             ],
             [
-                "name"=>"help       ",
-                "description"=>"Displays this help message",
+                "name" => "help       ",
+                "description" => "Displays this help message",
             ],
             [
-                "name"=>"init {env} ",
-                "description"=>"Initiates an environment (i.e. local, staging, live, testing)",
+                "name" => "init {env} ",
+                "description" => "Initiates an environment (i.e. local, staging, live, testing)",
             ],
             [
-                "name"=>"open {env} ",
-                "description"=>"Opens a browser window to the environment URL_BASE (i.e. local, staging, live)",
+                "name" => "open {env} ",
+                "description" => "Opens a browser window to the environment URL_BASE (i.e. local, staging, live)",
             ],
             [
-                "name"=>"serve      ",
-                "description"=>"Serves the local environment at URL_BASE using the built-in PHP server",
+                "name" => "serve      ",
+                "description" => "Serves the local environment at URL_BASE using the built-in PHP server",
             ],
         ];
 
         $this->say("===============================================================");
         $this->say("=                          PHPSLS                             =");
         $this->say("===============================================================");
-        foreach($cmds as $cmd){
+        foreach ($cmds as $cmd) {
             $this->say($cmd['name'] . "\t" . $cmd['description']);
         }
         $this->say("===============================================================");
@@ -232,9 +232,10 @@ class PhpSls {
      * Deploys an environment to the serverless action
      * specified in its configuration file
      */
-    public function deploy($args, $params = []) {        
+    public function deploy($args, $params = []) {
         Native::$logEcho = true;
         $environment = array_shift($args);
+        $noTests = $params['no-tests'] ?? false;
 
         // 1. Does the configuration file exists? No => Exit
         $this->say('1. Checking configuration...');
@@ -312,18 +313,22 @@ class PhpSls {
 
         // 7. Run tests
         $this->say('7. Running tests...');
-        $isSuccessful = $this->test();
-        if ($isSuccessful == false) {
-            return $this->say('Failed');
+        if ($noTests == true) {
+            $this->say(' - No  tests forced. Tests skipped');
+        } else {
+            $isSuccessful = $this->test();
+            if ($isSuccessful == false) {
+                return $this->say('Failed');
+            }
         }
-        
+
         // 8. Run composer (no-dev)
         $this->say('8. Updating composer dependencies...');
         $isSuccessful = Native::exec('chdir ' . $this->dirPhpSlsDeploy . '; composer update --no-dev --prefer-dist --optimize-autoloader');
         if ($isSuccessful == false) {
             return $this->say('Failed.');
         }
-        
+
         // 9. Prepare for deployment
         $this->say('9. Prepare for deployment...');
         Native::fileReplaceText($this->dirPhpSlsDeploy . DIRECTORY_SEPARATOR . 'env.php', '$environment = "local"; // !!! Do not change will be modified automatically during deployment', '$environment = "' . $environment . '"; // !!! Do not change will be modified automatically during deployment');
@@ -389,19 +394,19 @@ class PhpSls {
      */
     private function testWithPhpUnit() {
         $this->say('Running PHPUnit tests...');
-        
+
         Native::$logEcho = true;
 
         // 1. Run composer
         $isSuccessful = Native::exec('composer update --prefer-dist --optimize-autoloader');
-        
+
         if ($isSuccessful == false) {
             return false;
         }
 
         // 2. Run tests
         $isSuccessful = Native::exec('cd vendor/bin; phpunit --configuration="../../phpunit.xml"');
-        
+
         if ($isSuccessful == false) {
             return false;
         }
