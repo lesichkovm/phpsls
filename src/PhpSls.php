@@ -70,8 +70,12 @@ class PhpSls {
     private function _prepare() {
         $this->dirCwd = getcwd();
         $this->dirConfig = $this->dirCwd . DIRECTORY_SEPARATOR . 'config';
-        $this->dirPhpSls = $this->dirCwd . DIRECTORY_SEPARATOR . '.phpsls';
+
+        $dirUserHome = Native::userHome();
+        $cwdSlug = trim($this->_slugify($this->dirCwd), '-');
+        $this->dirPhpSls = $dirUserHome . DIRECTORY_SEPARATOR . '.phpsls' . DIRECTORY_SEPARATOR . $cwdSlug;
         $this->dirPhpSlsDeploy = $this->dirPhpSls . DIRECTORY_SEPARATOR . 'deploy';
+
         $this->dirTests = $this->dirCwd . DIRECTORY_SEPARATOR . 'tests';
 
         $this->fileConfigTesting = $this->dirConfig . DIRECTORY_SEPARATOR . 'testing.php';
@@ -82,11 +86,22 @@ class PhpSls {
             return true;
         }
 
-        \mkdir($this->dirPhpSls);
+        \mkdir($this->dirPhpSls, 0777, true);
 
-        if (is_dir($this->dirPhpSls) == true) {
-            return $this->say('Failed ro create directory .phpsls in current directory "' . $this->dirCwd . '". Please create manually.');
+        if (is_dir($this->dirPhpSls) == false) {
+            return $this->say('Failed ro create directory "' . $this->dirPhpSls . '" in user home directory. Please create manually.');
         }
+    }
+
+    private function _slugify($string, $separator = '-') {
+        $accents_regex = '~&([a-z]{1,2})(?:acute|cedil|circ|grave|lig|orn|ring|slash|th|tilde|uml);~i';
+        $special_cases = array('&' => 'and', "'" => '');
+        $string = mb_strtolower(trim($string), 'UTF-8');
+        $string = str_replace(array_keys($special_cases), array_values($special_cases), $string);
+        $string = preg_replace($accents_regex, '$1', htmlentities($string, ENT_QUOTES, 'UTF-8'));
+        $string = preg_replace("/[^a-z0-9]/u", "$separator", $string);
+        $string = preg_replace("/[$separator]+/u", "$separator", $string);
+        return $string;
     }
 
     /**
@@ -235,7 +250,6 @@ class PhpSls {
     public function deploy($args, $params = []) {
         Native::$logEcho = true;
         $environment = array_shift($args);
-        $noTests = $params['no-tests'] ?? false;
 
         // 1. Does the configuration file exists? No => Exit
         $this->say('1. Checking configuration...');
@@ -313,13 +327,9 @@ class PhpSls {
 
         // 7. Run tests
         $this->say('7. Running tests...');
-        if ($noTests == true) {
-            $this->say(' - No  tests forced. Tests skipped');
-        } else {
-            $isSuccessful = $this->test();
-            if ($isSuccessful == false) {
-                return $this->say('Failed');
-            }
+        $isSuccessful = $this->test();
+        if ($isSuccessful == false) {
+            return $this->say('Failed');
         }
 
         // 8. Run composer (no-dev)
@@ -586,6 +596,7 @@ class PhpSls {
         }
 
         $serverFileContents = file_get_contents(__DIR__ . '/stubs/index.php');
+        $serverFileContents = str_replace('dirname(__DIR__)', '"' . $this->dirCwd . '"', $serverFileContents);
         file_put_contents($this->dirPhpSls . DIRECTORY_SEPARATOR . 'index.php', $serverFileContents);
         $routerFile = $this->dirPhpSls . DIRECTORY_SEPARATOR . 'index.php';
 
