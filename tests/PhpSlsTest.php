@@ -25,7 +25,7 @@ class PhpSlsTest extends \PHPUnit\Framework\TestCase
     {
         $phpsls = Helper::phpslsPrepared();
 
-        $isSuccess = $phpsls->init("local", "");
+        $isSuccess = $phpsls->init(["local", ""]);
 
         $this->assertTrue($isSuccess);
         $this->assertTrue(is_dir($phpsls->dirConfig));
@@ -38,8 +38,8 @@ class PhpSlsTest extends \PHPUnit\Framework\TestCase
     {
         $phpsls = Helper::phpslsPrepared();
 
-        $phpsls->init("local", "");
-        $isSuccess = $phpsls->setup("phpunit");
+        $phpsls->init(["local", ""]);
+        $isSuccess = $phpsls->setup(["phpunit"]);
 
         $this->assertTrue(file_exists($phpsls->dirCwd.'/phpunit.xml'));
         $this->assertTrue(is_dir($phpsls->dirCwd.'/tests'));
