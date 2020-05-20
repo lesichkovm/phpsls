@@ -4,12 +4,16 @@ namespace PHPServerless;
 
 class PhpSls {
 
+    use PhpSlsEnvTrait;
+
     public $dirCwd = null;
     public $dirPhpSls = null;
     public $dirConfig = null;
     public $dirPhpSlsDeploy = null;
     public $dirTests = null;
     public $fileEnv = null;
+    public $fileDotEnv = null;
+    public $fileDotEnvDynamic = null;
     public $fileConfigEnvironment = null;
     public $fileConfigTesting = null;
     public $fileMain = null;
@@ -79,6 +83,8 @@ class PhpSls {
         $this->dirTests = $this->dirCwd . DIRECTORY_SEPARATOR . 'tests';
 
         $this->fileConfigTesting = $this->dirConfig . DIRECTORY_SEPARATOR . 'testing.php';
+        $this->fileDotEnv = $this->dirCwd . DIRECTORY_SEPARATOR . '.env';
+        $this->fileDotEnvDynamic = $this->dirCwd . DIRECTORY_SEPARATOR . '.env.dynamic';
         $this->fileEnv = $this->dirCwd . DIRECTORY_SEPARATOR . 'env.php';
         $this->fileMain = $this->dirCwd . DIRECTORY_SEPARATOR . 'main.php';
 
