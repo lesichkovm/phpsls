@@ -20,8 +20,11 @@
         "phpsls"
     ],
     "require": {
+        "adbario/php-dot-notation": "^2.2",
         "sinevia/php-library-registry": "^2.9",
-        "sinevia/php-library-serverless": "^1.9"
+        "sinevia/php-library-serverless": "^1.9",
+        "sinevia/php-library-utils": "^3.3",
+        "vlucas/phpdotenv": "^4.1"
     },
     "require-dev": {        
         "clue/phar-composer": "^1.1",
