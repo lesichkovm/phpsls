@@ -6,6 +6,7 @@ class Native {
 
     public static $logEcho = false;
     public static $logFile = '';
+    public static $lastExecOut = ''; // Latest output from exec
 
     public static function fileDelete($filePath) {
         return unlink($filePath);
@@ -112,9 +113,14 @@ class Native {
      */
     public static function exec($command) {
         self::log(' - Executing command: "' . $command . '"');
+        
+        self::$lastExecOut = "";
 
         exec($command, $out, $return);
+        
         self::log($out);
+        
+        self::$lastExecOut = $out;
 
         return $return == 0 ? true : false;
     }
