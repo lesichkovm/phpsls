@@ -118,8 +118,6 @@ class Native {
 
         exec($command, $out, $return);
         
-        self::log($out);
-        
         self::$lastExecOut = $out;
 
         return $return == 0 ? true : false;
