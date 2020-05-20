@@ -108,6 +108,8 @@ class PhpSls {
      * Initializes an environment
      */
     public function init($environment = "", $functionName = "") {
+        Native::$logEcho = true;
+        
         /* 1. Environment */
         if ($environment == "") {
             $environment = trim($this->ask('What environment do you want to initialize (i.e local, staging, live)?'));
@@ -605,6 +607,13 @@ class PhpSls {
                 ->taskRunPhpServer($domain, $routerFile);
     }
 
+    
+    private function ask($message) {
+        $handle = fopen ("php://stdin","r");
+        $line = fgets($handle);
+        fclose($handle);
+        return $line;
+    }
     private function say($message) {
         $message = date('Y-m-d H:i:s: ') . $message . "\n";
 
