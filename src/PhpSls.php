@@ -666,7 +666,9 @@ class PhpSls {
         return $this;
     }
 
-    public function setup($feature) {
+    public function setup($args, $params = []) {
+        Native::$logEcho = true;
+        $feature = array_shift($args);
         if ($feature == "phpunit") {
             return $this->setupPhpUnit();
         }

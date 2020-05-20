@@ -41,7 +41,7 @@ class PhpSlsTest extends \PHPUnit\Framework\TestCase
         $phpsls->init(["local", ""]);
         $isSuccess = $phpsls->setup(["phpunit"]);
 
-        $this->assertTrue(file_exists($phpsls->dirCwd.'/phpunit.xml'));
+        $this->assertTrue(file_exists($phpsls->dirCwd.'/phpunit.xml'), 'Does ' . $phpsls->dirCwd.'/phpunit.xml' . ' exist?');
         $this->assertTrue(is_dir($phpsls->dirCwd.'/tests'));
         $this->assertTrue(file_exists($phpsls->dirCwd.'/tests/BaseTest.php'));
     }
