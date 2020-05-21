@@ -45,6 +45,10 @@ class PhpSls {
                 "description" => "Deploys an environment (i.e. staging, live)",
             ],
             [
+                "name" => "dot {env} --dry-run=no --force=no",
+                "description" => "Creates a .env file",
+            ],
+            [
                 "name" => "help       ",
                 "description" => "Displays this help message",
             ],
@@ -114,6 +118,38 @@ class PhpSls {
      * Initializes an environment
      */
     public function init($args, $params = []) {
+        $this->say('The development of the new v2 init is in development, you can use initV1 for the old init sequence...');
+        return false;
+
+        Native::$logEcho = true;
+        $environment = array_shift($args);
+        $functionName = array_shift($args);
+
+        /* 1. Environment */
+        if ($environment == "") {
+            $environment = trim($this->ask('What environment do you want to initialize (i.e local, staging, live)?'));
+        }
+
+        if ($environment == "") {
+            $this->say("Environment cannot be empty. FAILED");
+            return false;
+        }
+
+        /* 2. Function name */
+        if ($environment != "local") {
+            $functionName = trim($this->ask('What would you like your function to be called?'));
+
+            if ($functionName == "") {
+                $this->say("Function name cannot be empty. FAILED");
+                return false;
+            }
+        }
+    }
+
+    /**
+     * Initializes an environment
+     */
+    public function initV1($args, $params = []) {
         Native::$logEcho = true;
         $environment = array_shift($args);
         $functionName = array_shift($args);
@@ -258,6 +294,135 @@ class PhpSls {
      * specified in its configuration file
      */
     public function deploy($args, $params = []) {
+        Native::$logEcho = true;
+        $environment = array_shift($args);
+
+        /* 1. Environment */
+        $this->say('1. Checking environment...');
+
+        if ($environment == "") {
+            $environment = trim($this->ask('What environment do you want to deploy (i.e staging, live)?'));
+        }
+
+        if ($environment == "") {
+            $this->say("Environment cannot be empty. FAILED");
+            return false;
+        }
+
+        // 4. Create deployment directory
+        $this->say('4. Creating deployment directory...');
+        if (file_exists($this->dirPhpSlsDeploy) == false) {
+            $isSuccessful = Native::directoryCreate($this->dirPhpSlsDeploy);
+            if ($isSuccessful == false) {
+                return $this->say('Failed.');
+            }
+        }
+
+        $this->taskCleanDir($this->dirPhpSlsDeploy);
+        $envFile = $this->dirPhpSlsDeploy . '/.env';
+
+        // 2. Load the configuration file for the enviroment
+        $this->say('2. Creating .env file for environment "' . $environment . '" ...');
+        $this->_createDotFileForEnvironment($environment, $envFile);
+
+        $dotenv = \Dotenv\Dotenv::createMutable($this->dirPhpSlsDeploy, [basename($envFile)]);
+        $dotenv->load();
+
+        // 3. Check if serverless function name is set
+        $this->say('3. Checking if serverless function name set for environment "' . $environment . '" ...');
+        $functionName = $_ENV['SERVERLESS_FUNCTION_NAME'] ?? '';
+        $serverlessProvider = strtolower($_ENV['SERVERLESS_PROVIDER'] ?? '');
+
+        if ($functionName == "") {
+            return $this->say('SERVERLESS_FUNCTION_NAME not set for environment "' . $environment . '"');
+        } else {
+            $this->say('SERVERLESS_FUNCTION_NAME is set as "' . $functionName . '"');
+        }
+
+        if ($functionName == "{YOUR_LIVE_SERVERLESS_FUNCTION_NAME}") {
+            return $this->say('SERVERLESS_FUNCTION_NAME not correct for environment "' . $environment . '"');
+        }
+
+        // 3. Check if serverless provider is set
+        $this->say('3. Checking if serverless provider is supported for "' . $environment . '" ...');
+        $supportedProviders = ['aws', 'ibm'];
+        if (in_array($serverlessProvider, $supportedProviders) == false) {
+            return $this->say('SERVERLESS_PROVIDER not supported "' . $serverlessProvider . '"');
+        }
+
+        $this->say('SERVERLESS_PROVIDER is set as "' . $serverlessProvider . '"');
+        
+        // 5. Add required stub files
+        $this->say('5. Copying stub files...');
+        $serverlessPhpFileContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'serverless.php');
+        file_put_contents($this->dirPhpSlsDeploy . DIRECTORY_SEPARATOR . 'serverless.php', $serverlessPhpFileContents);
+
+        $serverlessConfigFile = 'serverless-ibm.yaml';
+        if ($serverlessProvider == 'aws') {
+            $serverlessConfigFile = 'serverless-aws.yaml';
+        }
+        $serverlessYamlFileContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . $serverlessConfigFile);
+        $serverlessYamlFileContents = str_replace('{YOURFUNCTION}', $functionName, $serverlessYamlFileContents);
+        file_put_contents($this->dirPhpSlsDeploy . DIRECTORY_SEPARATOR . 'serverless.yaml', $serverlessYamlFileContents);
+
+        // 6. Copy project files
+        $this->say('6. Copying files...');
+        Native::directoryCopyRecursive(getcwd(), $this->dirPhpSlsDeploy);
+        Native::fileDelete($this->dirPhpSlsDeploy . '/composer.lock');
+        Native::directoryDeleteRecursive($this->dirPhpSlsDeploy . '/nbproject');
+        Native::directoryDeleteRecursive($this->dirPhpSlsDeploy . '/node_modules');
+        Native::directoryDeleteRecursive($this->dirPhpSlsDeploy . '/vendor');
+
+        // 7. Run tests
+        $this->say('7. Running tests...');
+        $isTestSuccessful = $this->test();
+        if ($isTestSuccessful == false) {
+            return $this->say('Failed');
+        }
+
+        // 8. Run composer (no-dev)
+        $this->say('8. Updating composer dependencies...');
+        $isSuccessful = Native::exec('chdir ' . $this->dirPhpSlsDeploy . '; composer update --no-dev --prefer-dist --optimize-autoloader');
+        if ($isSuccessful == false) {
+            return $this->say('Failed.');
+        }
+
+        // 9. Prepare for deployment
+        $this->say('9. Prepare for deployment...');
+        Native::fileReplaceText($this->dirPhpSlsDeploy . DIRECTORY_SEPARATOR . 'env.php', '$environment = "local"; // !!! Do not change will be modified automatically during deployment', '$environment = "' . $environment . '"; // !!! Do not change will be modified automatically during deployment');
+
+        $packageFileContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'package.json');
+        file_put_contents($this->dirPhpSlsDeploy . DIRECTORY_SEPARATOR . 'package.json', $packageFileContents);
+
+        try {
+            $this->say('5. NPM Install Packages...');
+            Native::exec('chdir ' . $this->dirPhpSlsDeploy . ';npm install');
+        } catch (\Exception $e) {
+            $this->say('There was an exception: ' . $e->getMessage());
+        }
+
+        // 10. Deploy
+        try {
+            $this->say('10. Deploying...');
+            Native::exec('chdir ' . $this->dirPhpSlsDeploy . '; sls deploy');
+        } catch (\Exception $e) {
+            $this->say('There was an exception: ' . $e->getMessage());
+            return;
+        }
+
+        // 11. Cleanup after deployment
+        $this->say('11. Cleaning up...');
+
+        // 12. Cleanup after deployment
+        $this->say('12. Opening URL...');
+        $this->open([$environment], []);
+    }
+
+    /**
+     * Deploys an environment to the serverless action
+     * specified in its configuration file
+     */
+    public function deployV1($args, $params = []) {
         Native::$logEcho = true;
         $environment = array_shift($args);
 
