@@ -113,11 +113,11 @@ class Native {
      */
     public static function exec($command) {
         self::log(' - Executing command: "' . $command . '"');
-        
+
         self::$lastExecOut = "";
 
         exec($command, $out, $return);
-        
+
         self::$lastExecOut = $out;
 
         return $return == 0 ? true : false;
@@ -223,6 +223,14 @@ class Native {
             // If HOMEPATH is a root directory the path can end with a slash. Make sure
             // that doesn't happen.
             $home = rtrim($home, '\\/');
+        }
+
+        // Running in cygwin. Not 100% reliable
+        if (strpos($home, 'cygwin') >= 0) {
+            self::exec('cygpath -w --desktop');
+            if (empty(self::$lastExecOut) == false) {
+                return dirname(implode("\n", self::$lastExecOut));
+            }
         }
 
         return empty($home) ? NULL : $home;
