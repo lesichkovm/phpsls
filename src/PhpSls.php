@@ -119,34 +119,13 @@ class PhpSls {
      */
     public function init($args, $params = []) {
         Native::$logEcho = true;
-        $environment = array_shift($args);
-        $functionName = array_shift($args);
-
-        /* 1. Environment */
-        if ($environment == "") {
-            $environment = trim($this->ask('What environment do you want to initialize (i.e local, staging, live)?'));
-        }
-
-        if ($environment == "") {
-            $this->say("Environment cannot be empty. FAILED");
-            return false;
-        }
-
-        /* 2. Function name */
-        if ($environment != "local") {
-            $functionName = trim($this->ask('What would you like your function to be called?'));
-
-            if ($functionName == "") {
-                $this->say("Function name cannot be empty. FAILED");
-                return false;
-            }
-        }
+        $environment = 'local';
 
         /* 3. Create files */
         $this->say('1. Creating .env.dynamic file, if missing ...');
 
         if (\file_exists($this->fileDotEnvDynamic) == false) {
-            $dotEnvDynamicContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . '.env.php');
+            $dotEnvDynamicContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . '.env.dynamic');
             file_put_contents($this->fileDotEnvDynamic, $dotEnvDynamicContents);
             $this->say(".env.dynamic file created. SUCCESS");
             $this->say("Please check all is correct at: '" . $this->fileDotEnvDynamic . "'");
@@ -201,7 +180,7 @@ class PhpSls {
         }
         $autoloadFiles = $composerJson['autoload']['files'] ?? [];
         \array_unshift($autoloadFiles, "main.php"); // Second
-        \array_unshift($autoloadFiles, "env.php");  // First
+        //\array_unshift($autoloadFiles, "env.php");  // First
         $composerJson['autoload']['files'] = \array_values(\array_unique($autoloadFiles));
         $composerJson['autoload']['psr-4']['App\\'] = "app/";
         $composerJson['autoload']['psr-4']['Tests\\'] = "tests/";
@@ -215,7 +194,7 @@ class PhpSls {
         $composerJson["minimum-stability"] = "dev";
         $composerJson["prefer-stable"] = true;
         file_put_contents($this->dirCwd . '/composer.json', \json_encode($composerJson, JSON_PRETTY_PRINT));
-        
+
         $this->say('5. Please run "composer update" to update dependencies');
 
         return true;
@@ -860,13 +839,12 @@ class PhpSls {
      */
     public function serve() {
         /* START: Reload enviroment */
-        Registry::set("ENVIRONMENT", 'local');
-        $this->_loadEnvConf(Registry::get("ENVIRONMENT"));
+        $env = $this->_env('local');
         /* END: Reload enviroment */
 
-        $url = Registry::get('URL_BASE', '');
+        $url = $env['APP_URL'] ?? '';
         if ($url == "") {
-            return $this->say('URL_BASE not set for local');
+            return $this->say('APP_URL not set for local');
         }
 
         $domain = str_replace(['http://', 'https://'], '', $url);
@@ -874,13 +852,19 @@ class PhpSls {
             $domain = 'localhost:35555';
         }
 
+        DotEnvParser::arrayToEnv($env, $this->fileDotEnv);
+
         $serverFileContents = file_get_contents(__DIR__ . '/stubs/index.php');
         $serverFileContents = str_replace('dirname(__DIR__)', '"' . $this->dirCwd . '"', $serverFileContents);
         file_put_contents($this->dirPhpSls . DIRECTORY_SEPARATOR . 'index.php', $serverFileContents);
         $routerFile = $this->dirPhpSls . DIRECTORY_SEPARATOR . 'index.php';
 
+
+        $this->open(['local'], []);
+
+
         $isSuccessful = $this
-                ->taskOpenBrowser($url)
+                //->taskOpenFirefox($url)
                 ->taskRunPhpServer($domain, $routerFile);
     }
 
@@ -1012,7 +996,7 @@ class PhpSls {
             $this->say("Environment not set");
             return;
         }
-        
+
         $env = $this->_env($environment);
 
         $functionName = $env['SERVERLESS_FUNCTION_NAME'] ?? '';
@@ -1021,7 +1005,7 @@ class PhpSls {
         }
         Native::$logEcho = true;
         chdir($this->dirPhpSlsDeploy);
-        Native::exec('sls logs --function '. $functionName);
+        Native::exec('sls logs --function ' . $functionName);
     }
 
     /**
