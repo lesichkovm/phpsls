@@ -142,7 +142,7 @@ class PhpSls {
             }
         }
 
-        /* 3. Create stucture */
+        /* 3. Create files */
         $this->say('1. Creating .env.dynamic file, if missing ...');
 
         if (\file_exists($this->fileDotEnvDynamic) == false) {
@@ -153,6 +153,72 @@ class PhpSls {
         } else {
             $this->say(".env.dynamic file already exists at " . $this->fileDotEnvDynamic . ". SKIPPED");
         }
+
+        $this->say('2. Creating main file, if missing...');
+
+        if (\file_exists($this->fileMain) == false) {
+            $mainFileContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'main.php');
+            file_put_contents($this->fileMain, $mainFileContents);
+            $this->say("Main file created. SUCCESS");
+            $this->say("Please check all is correct at: '" . $this->fileMain . "'");
+        } else {
+            $this->say("Main file already exists at " . $this->fileMain . ". SKIPPED");
+        }
+
+        $this->say('3. Creating composer.json file, if missing ...');
+        if (\file_exists($this->dirCwd . '/composer.json') == false) {
+            $composerJson = [
+                'require' => [
+                    "dg/composer-cleaner" => "v2.1",
+                    "sinevia/php-library-serverless" => "^1.9",
+                ],
+                'require-dev' => [
+                    "lesichkovm/phpsls" => "^1.5",
+                    "phpunit/phpunit" => "8.5.1",
+                ],
+                "config" => [
+                    "optimize-autoloader" => true,
+                    "preferred-install" => "dist",
+                    "sort-packages" => true,
+                ],
+                "minimum-stability" => "dev",
+                "prefer-stable" => true,
+                "extra" => [
+                    "cleaner-ignore" => [
+                        "phpunit/phpunit" => true,
+                        "vlucas/valitron" => true,
+                    ]
+                ]
+            ];
+            file_put_contents($this->dirCwd . '/composer.json', \json_encode($composerJson, JSON_PRETTY_PRINT));
+        }
+
+        $this->say('4. Updating composer.json file ...');
+        $composerJson = json_decode(file_get_contents($this->dirCwd . '/composer.json'), true);
+        if ($composerJson == null) {
+            $this->say("File \"composer.json\" missing. FAILED");
+            return false;
+        }
+        $autoloadFiles = $composerJson['autoload']['files'] ?? [];
+        \array_unshift($autoloadFiles, "main.php"); // Second
+        \array_unshift($autoloadFiles, "env.php");  // First
+        $composerJson['autoload']['files'] = \array_values(\array_unique($autoloadFiles));
+        $composerJson['autoload']['psr-4']['App\\'] = "app/";
+        $composerJson['autoload']['psr-4']['Tests\\'] = "tests/";
+        $composerJson['require']["dg/composer-cleaner"] = "v2.1";
+        $composerJson['require']["sinevia/php-library-serverless"] = "^1.7";
+        $composerJson["extra"]["cleaner-ignore"]["phpunit/phpunit"] = true;
+        $composerJson["extra"]["cleaner-ignore"]["vlucas/valitron"] = true;
+        $composerJson["config"]["optimize-autoloader"] = true;
+        $composerJson["config"]["preferred-install"] = "dist";
+        $composerJson["config"]["sort-packages"] = true;
+        $composerJson["minimum-stability"] = "dev";
+        $composerJson["prefer-stable"] = true;
+        file_put_contents($this->dirCwd . '/composer.json', \json_encode($composerJson, JSON_PRETTY_PRINT));
+        
+        $this->say('5. Please run "composer update" to update dependencies');
+
+        return true;
     }
 
     /**
