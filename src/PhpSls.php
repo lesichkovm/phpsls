@@ -118,9 +118,6 @@ class PhpSls {
      * Initializes an environment
      */
     public function init($args, $params = []) {
-        $this->say('The development of the new v2 init is in development, you can use initV1 for the old init sequence...');
-        return false;
-
         Native::$logEcho = true;
         $environment = array_shift($args);
         $functionName = array_shift($args);
@@ -143,6 +140,18 @@ class PhpSls {
                 $this->say("Function name cannot be empty. FAILED");
                 return false;
             }
+        }
+
+        /* 3. Create stucture */
+        $this->say('1. Creating .env.dynamic file, if missing ...');
+
+        if (\file_exists($this->fileDotEnvDynamic) == false) {
+            $dotEnvDynamicContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . '.env.php');
+            file_put_contents($this->fileDotEnvDynamic, $dotEnvDynamicContents);
+            $this->say(".env.dynamic file created. SUCCESS");
+            $this->say("Please check all is correct at: '" . $this->fileDotEnvDynamic . "'");
+        } else {
+            $this->say(".env.dynamic file already exists at " . $this->fileDotEnvDynamic . ". SKIPPED");
         }
     }
 
