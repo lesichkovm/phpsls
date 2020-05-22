@@ -631,18 +631,11 @@ class PhpSls {
 
         $this->say('Running tests...');
 
-        $isSuccessful = $this->taskExec('composer')
-                ->arg('update')
-                ->option('prefer-dist')
-                ->option('optimize-autoloader')
-                ->run()
-                ->wasSuccessful();
+        $isSuccessful = Native::exec('composer update --prefer-dist --optimize-autoloader');
 
-        $result = $this->taskExec('php')
-                ->dir($this->dirTests)
-                ->arg('test.php')
-                ->printOutput(true)
-                ->run();
+        chdir($this->dirTests);
+        Native::$logEcho = true;
+        $result = Native::exec('php test.php');
 
         $output = trim($result->getMessage());
 
