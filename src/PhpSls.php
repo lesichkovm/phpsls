@@ -325,13 +325,13 @@ class PhpSls {
         $this->say('2. Creating .env file for environment "' . $environment . '" ...');
         $this->_createDotFileForEnvironment($environment, $envFile);
 
-        $dotenv = \Dotenv\Dotenv::createMutable($this->dirPhpSlsDeploy, [basename($envFile)]);
-        $dotenv->load();
-
+        //$dotenv = \Dotenv\Dotenv::createMutable($this->dirPhpSlsDeploy, [basename($envFile)]);
+        //$dotenv->load();
+        $env = $this->_env($environment);
         // 3. Check if serverless function name is set
         $this->say('3. Checking if serverless function name set for environment "' . $environment . '" ...');
-        $functionName = $_ENV['SERVERLESS_FUNCTION_NAME'] ?? '';
-        $serverlessProvider = strtolower($_ENV['SERVERLESS_PROVIDER'] ?? '');
+        $functionName = $env['SERVERLESS_FUNCTION_NAME'] ?? '';
+        $serverlessProvider = strtolower($env['SERVERLESS_PROVIDER'] ?? '');
 
         if ($functionName == "") {
             return $this->say('SERVERLESS_FUNCTION_NAME not set for environment "' . $environment . '"');
@@ -712,9 +712,9 @@ class PhpSls {
             $this->say("Environment not set");
             return;
         }
-        
+
         $env = $this->_env($environment);
-        $url = $env['APP_URL']??'';
+        $url = $env['APP_URL'] ?? '';
         if ($url == "") {
             return $this->say('APP_URL not set for ' . $environment);
         }
@@ -937,22 +937,23 @@ class PhpSls {
     /**
      * Retrieves the logs from serverless
      */
-    public function logs($environment) {
-        /* START: Reload enviroment */
-        Registry::set("ENVIRONMENT", $environment);
-        $this->_loadEnvConf(Registry::get("ENVIRONMENT"));
-        /* END: Reload enviroment */
+    public function logs($args, $params = []) {
+        $environment = array_shift($args);
 
-        $functionName = Registry::get('SERVERLESS_FUNCTION_NAME', '');
+        if ($environment == "") {
+            $this->say("Environment not set");
+            return;
+        }
+        
+        $env = $this->_env($environment);
+
+        $functionName = $env['SERVERLESS_FUNCTION_NAME'] ?? '';
         if ($functionName == "") {
             return $this->say('SERVERLESS_FUNCTION_NAME not set for ' . $environment);
         }
-
-        $this->taskExec('sls')
-                ->arg('logs')
-                ->option('function', $functionName)
-                ->dir($this->dirPhpSlsDeploy)
-                ->run();
+        Native::$logEcho = true;
+        chdir($this->dirPhpSlsDeploy);
+        Native::exec('sls logs --function '. $functionName);
     }
 
     /**
