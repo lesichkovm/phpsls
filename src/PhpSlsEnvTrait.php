@@ -33,16 +33,18 @@ trait PhpSlsEnvTrait {
 
         //echo $this->fileDotEnvDynamic;
 
-        $dotenv = \Dotenv\Dotenv::createMutable($this->dirCwd, [basename($this->fileDotEnvDynamic)]);
-        $dotenv->load();
-
-        foreach ($_ENV as $key => $value) {
-            $resolvedValue = $this->_valueResolve($value, $environment);
-            $_ENV[$key] = $resolvedValue;
-        }
+        $env = $this->_env($environment);
+        
+//        $dotenv = \Dotenv\Dotenv::createMutable($this->dirCwd, [basename($this->fileDotEnvDynamic)]);
+//        $dotenv->load();
+//
+//        foreach ($_ENV as $key => $value) {
+//            $resolvedValue = $this->_valueResolve($value, $environment);
+//            $_ENV[$key] = $resolvedValue;
+//        }
 
         if ($dryRun == true) {
-            \Sinevia\Utils::alert($_ENV);
+            \Sinevia\Utils::alert($env);
             return true;
         }
 
@@ -56,8 +58,8 @@ trait PhpSlsEnvTrait {
         }
 
         $envContent = '';
-        foreach ($_ENV as $key => $value) {
-            $envContent .= $key . '=' . json_encode($value) . "\n";
+        foreach ($env as $key => $value) {
+            $envContent .= $key . '="' . $value . '"' . "\n";
         }
 
         $length = file_put_contents($this->fileDotEnv, $envContent);
@@ -69,8 +71,8 @@ trait PhpSlsEnvTrait {
         $this->say("File " . $this->fileDotEnv . " failed to be written check permissions. FAILED");
         return false;
     }
-    
-    function _env($environment){
+
+    function _env($environment) {
         $envArray = DotEnvParser::envToArray($this->fileDotEnvDynamic);
         foreach ($envArray as $key => $value) {
             $resolvedValue = $this->_valueResolve($value, $environment);
@@ -84,19 +86,23 @@ trait PhpSlsEnvTrait {
             $this->say("File .env.dynamic DOES NOT exist. FAILED");
             return false;
         }
-        $dotenv = \Dotenv\Dotenv::createMutable($this->dirCwd, [basename($this->fileDotEnvDynamic)]);
-        $dotenv->load();
 
-        foreach ($_ENV as $key => $value) {
-            $resolvedValue = $this->_valueResolve($value, $environment);
-            $_ENV[$key] = $resolvedValue;
-        }
+        //$dotenv = \Dotenv\Dotenv::createMutable($this->dirCwd, [basename($this->fileDotEnvDynamic)]);
+        //$dotenv->load();
+        //foreach ($_ENV as $key => $value) {
+        //    $resolvedValue = $this->_valueResolve($value, $environment);
+        //    $_ENV[$key] = $resolvedValue;
+        //}
+        //$envContent = '';
+        //foreach ($_ENV as $key => $value) {
+        //    $envContent .= $key . '="' . $value . '"' . "\n";
+        //}
 
+        $env = $this->_env($environment);
         $envContent = '';
-        foreach ($_ENV as $key => $value) {
-            $envContent .= $key . '=' . json_encode($value) . "\n";
+        foreach ($env as $key => $value) {
+            $envContent .= $key . '="' . $value . '"' . "\n";
         }
-
 
         $length = file_put_contents($destinationFilePath, $envContent);
         if ($length !== false) {
@@ -123,11 +129,12 @@ trait PhpSlsEnvTrait {
     }
 
     function _getSsmPath($ssmVariable) {
+        Native::$logEcho = false;
+        
         $ssmPath = substr(substr($ssmVariable, 6), 0, -1);
 
         $cmd = "aws ssm get-parameter --with-decryption --name $ssmPath --region eu-west-2";
-        //Native::$logEcho = true;
-        $result = Native::exec($cmd);
+        Native::exec($cmd);
         $value = json_decode(implode('', Native::$lastExecOut))->Parameter->Value ?? null;
 
         if (is_null($value)) {
