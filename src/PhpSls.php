@@ -351,7 +351,7 @@ class PhpSls {
         }
 
         $this->say('SERVERLESS_PROVIDER is set as "' . $serverlessProvider . '"');
-        
+
         // 5. Add required stub files
         $this->say('5. Copying stub files...');
         $serverlessPhpFileContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'serverless.php');
@@ -374,40 +374,46 @@ class PhpSls {
         Native::directoryDeleteRecursive($this->dirPhpSlsDeploy . '/vendor');
 
         // 7. Run tests
-        $this->say('7. Running tests...');
-        $isTestSuccessful = $this->test();
-        if ($isTestSuccessful == false) {
-            return $this->say('Failed');
-        }
-
+//        $this->say('7. Running tests...');
+//        $isTestSuccessful = $this->test();
+//        if ($isTestSuccessful == false) {
+//            return $this->say('Failed');
+//        }
         // 8. Run composer (no-dev)
         $this->say('8. Updating composer dependencies...');
-        $isSuccessful = Native::exec('chdir ' . $this->dirPhpSlsDeploy . '; composer update --no-dev --prefer-dist --optimize-autoloader');
-        if ($isSuccessful == false) {
-            return $this->say('Failed.');
+        if (chdir($this->dirPhpSlsDeploy)) {
+            $isSuccessful = Native::exec('composer update --no-dev --prefer-dist --optimize-autoloader');
+            if ($isSuccessful == false) {
+                return $this->say('Failed.');
+            }
         }
 
         // 9. Prepare for deployment
         $this->say('9. Prepare for deployment...');
-        Native::fileReplaceText($this->dirPhpSlsDeploy . DIRECTORY_SEPARATOR . 'env.php', '$environment = "local"; // !!! Do not change will be modified automatically during deployment', '$environment = "' . $environment . '"; // !!! Do not change will be modified automatically during deployment');
+        //Native::fileReplaceText($this->dirPhpSlsDeploy . DIRECTORY_SEPARATOR . 'env.php', '$environment = "local"; // !!! Do not change will be modified automatically during deployment', '$environment = "' . $environment . '"; // !!! Do not change will be modified automatically during deployment');
 
         $packageFileContents = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'package.json');
         file_put_contents($this->dirPhpSlsDeploy . DIRECTORY_SEPARATOR . 'package.json', $packageFileContents);
 
         try {
             $this->say('5. NPM Install Packages...');
-            Native::exec('chdir ' . $this->dirPhpSlsDeploy . ';npm install');
+            if (chdir($this->dirPhpSlsDeploy)) {
+                Native::exec('npm install');
+            }
         } catch (\Exception $e) {
             $this->say('There was an exception: ' . $e->getMessage());
+            return false;
         }
 
         // 10. Deploy
         try {
             $this->say('10. Deploying...');
-            Native::exec('chdir ' . $this->dirPhpSlsDeploy . '; sls deploy');
+            if (chdir($this->dirPhpSlsDeploy)) {
+                Native::exec('sls deploy');
+            }
         } catch (\Exception $e) {
             $this->say('There was an exception: ' . $e->getMessage());
-            return;
+            return false;
         }
 
         // 11. Cleanup after deployment
@@ -423,6 +429,19 @@ class PhpSls {
      * specified in its configuration file
      */
     public function deployV1($args, $params = []) {
+        if (Native::commandExists('composer') == false) {
+            $this->say('Command composer is required please install it. FAILED');
+            return false;
+        }
+        if (Native::commandExists('npm') == false) {
+            $this->say('Command npm is required please install it. FAILED');
+            return false;
+        }
+        if (Native::commandExists('serverless') == false) {
+            $this->say('Command serverless is required please install it. FAILED');
+            return false;
+        }
+
         Native::$logEcho = true;
         $environment = array_shift($args);
 
@@ -687,6 +706,23 @@ class PhpSls {
     }
 
     public function open($args, $params = []) {
+        $environment = array_shift($args);
+
+        if ($environment == "") {
+            $this->say("Environment not set");
+            return;
+        }
+        
+        $env = $this->_env($environment);
+        $url = $env['APP_URL']??'';
+        if ($url == "") {
+            return $this->say('APP_URL not set for ' . $environment);
+        }
+
+        $this->taskOpenFirefox($url);
+    }
+
+    public function openV1($args, $params = []) {
         $environment = array_shift($args);
 
         if ($environment == "") {
