@@ -69,6 +69,15 @@ trait PhpSlsEnvTrait {
         $this->say("File " . $this->fileDotEnv . " failed to be written check permissions. FAILED");
         return false;
     }
+    
+    function _env($environment){
+        $envArray = DotEnvParser::envToArray($this->fileDotEnvDynamic);
+        foreach ($envArray as $key => $value) {
+            $resolvedValue = $this->_valueResolve($value, $environment);
+            $envArray[$key] = $resolvedValue;
+        }
+        return $envArray;
+    }
 
     function _createDotFileForEnvironment($environment, $destinationFilePath) {
         if (file_exists($this->fileDotEnvDynamic) == false) {
