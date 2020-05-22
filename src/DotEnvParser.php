@@ -20,7 +20,6 @@ class DotEnvParser {
 
         foreach ($lines as $line) {
             if ($line === "") {
-                $variables[] = "";
                 continue;
             }
 
@@ -30,10 +29,14 @@ class DotEnvParser {
             // Pull everything to the left of the first equals
             $key = substr($line, 0, $equalsLocation);
 
+            if (trim($key) == "") {
+                continue;
+            }
+
             // Pull everything to the right from the equals to end of the line
             $value = substr($line, ($equalsLocation + 1), strlen($line));
 
-            $variables[$key] = trim(trim($value), '"');
+            $variables[trim($key)] = trim(trim($value), '"');
         }
 
         return $variables;
