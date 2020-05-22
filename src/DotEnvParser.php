@@ -68,7 +68,7 @@ class DotEnvParser {
             }
 
             // Always convert $key to uppercase
-            $env .= strtoupper($key) . "=" . $value;
+            $env .= strtoupper($key) . '="' . $value . '"';
 
             // If isn't last item in array add new line to end
             if ($position != count($array)) {
