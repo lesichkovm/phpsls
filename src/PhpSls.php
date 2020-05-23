@@ -164,6 +164,7 @@ class PhpSls {
                 "prefer-stable" => true,
                 "extra" => [
                     "cleaner-ignore" => [
+                        "facade/ignition" => true,
                         "phpunit/phpunit" => true,
                         "vlucas/valitron" => true,
                     ]
@@ -186,6 +187,7 @@ class PhpSls {
         $composerJson['autoload']['psr-4']['Tests\\'] = "tests/";
         $composerJson['require']["dg/composer-cleaner"] = "v2.1";
         $composerJson['require']["sinevia/php-library-serverless"] = "^1.7";
+        $composerJson["extra"]["cleaner-ignore"]["facade/ignition"] = true;
         $composerJson["extra"]["cleaner-ignore"]["phpunit/phpunit"] = true;
         $composerJson["extra"]["cleaner-ignore"]["vlucas/valitron"] = true;
         $composerJson["config"]["optimize-autoloader"] = true;
