@@ -1,10 +1,9 @@
 name: Release
 
 on:
-  push:
-    branches: [ master ]
-    tags:
-    - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+  release:
+    types:
+      - created
 
 jobs:
   build:
@@ -31,8 +30,8 @@ jobs:
       with:
         tag_name: ${{ github.ref }}
         release_name: Release ${{ github.ref }}
-        draft: false
-        prerelease: false
+        draft: true
+        prerelease: true
         
     - name: Upload Release Asset
       id: upload-release-asset 
