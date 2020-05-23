@@ -975,7 +975,7 @@ class PhpSls {
             $this->say('File "' . $fileBaseTest . '" already exists. SKIPPED');
         }
 
-
+        /*
         $this->say('3. Creating config file for "testing" environment, if missing ...');
 
         if (\file_exists($this->fileConfigTesting) == false) {
@@ -988,6 +988,7 @@ class PhpSls {
         } else {
             $this->say("Configuration file for environment 'testing' already exists at " . $this->fileConfigTesting . ". SKIPPED");
         }
+        */
 
         return true;
     }

@@ -28,8 +28,7 @@ class PhpSlsTest extends \PHPUnit\Framework\TestCase
         $isSuccess = $phpsls->init(["local", ""]);
 
         $this->assertTrue($isSuccess);
-        $this->assertTrue(is_dir($phpsls->dirConfig));
-        $this->assertTrue(file_exists($phpsls->fileEnv));
+        $this->assertTrue(file_exists($phpsls->fileDotEnvDynamic));
         $this->assertTrue(file_exists($phpsls->fileMain));
         $this->assertTrue(file_exists($phpsls->dirCwd.'/composer.json'));
     }

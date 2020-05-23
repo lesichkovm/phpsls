@@ -246,9 +246,9 @@ class Native {
             // that doesn't happen.
             $home = rtrim($home, '\\/');
         }
-
+        
         // Running in cygwin. Not 100% reliable
-        if (strpos($home, 'cygwin') >= 0) {
+        if (strpos($home, 'cygwin') !== false) {
             self::exec('cygpath -w --desktop');
             if (empty(self::$lastExecOut) == false) {
                 return dirname(implode("\n", self::$lastExecOut));
