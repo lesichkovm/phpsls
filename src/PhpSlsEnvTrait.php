@@ -168,7 +168,7 @@ trait PhpSlsEnvTrait {
         $fileContents = file_get_contents($file);
         $json = json_decode($fileContents, true);
 
-        $dot = new \Adbar\Dot($json);
+        $dot = new Dot($json);
 
         $value = $dot->get($param);
 
