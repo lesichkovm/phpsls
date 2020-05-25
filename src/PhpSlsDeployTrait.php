@@ -72,7 +72,7 @@ trait PhpSlsDeployTrait {
         Native::directoryCopyRecursive(getcwd(), $this->dirPhpSlsDeploy);
 
         // 7. Remove unneeded files
-        $this->say('7. Copying files...');
+        $this->say('7. Removing files...');
         if ($this->deployTaskRemoveUnneededFilesAndDirectories()) {
             $this->say("Failed to remove unneeded files and directories. FAILED");
             return false;
@@ -144,7 +144,7 @@ trait PhpSlsDeployTrait {
             return false;
         }
 
-        $isSuccessful = Native::directoryCreate($this->$dirPath);
+        $isSuccessful = Native::directoryCreate($dirPath);
 
         return $isSuccessful;
     }
