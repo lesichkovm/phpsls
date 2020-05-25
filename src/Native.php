@@ -43,6 +43,9 @@ class Native {
     }
 
     public static function fileDelete($filePath) {
+        if (file_exists($filePath) == false) {
+            return true;
+        }
         return unlink($filePath);
     }
 
