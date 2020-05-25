@@ -30,6 +30,18 @@ class Native {
         return $exists;
     }
 
+    public static function fileCopy($srcFilePath, $targetFilePath) {
+        $src = file_get_contents($srcFilePath);
+        $result = file_put_contents($targetFilePath, $src);
+        if ($result === false) {
+            return false;
+        }
+        if (file_exists($targetFilePath)) {
+            return true;
+        }
+        return false;
+    }
+
     public static function fileDelete($filePath) {
         return unlink($filePath);
     }
@@ -246,7 +258,7 @@ class Native {
             // that doesn't happen.
             $home = rtrim($home, '\\/');
         }
-        
+
         // Running in cygwin. Not 100% reliable
         if (strpos($home, 'cygwin') !== false) {
             self::exec('cygpath -w --desktop');
